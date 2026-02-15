@@ -2,31 +2,16 @@ import SwiftUI
 
 struct AboutSettings: View {
     weak var updater: UpdaterProviding?
-    @State private var iconHover = false
     @AppStorage("autoUpdateEnabled") private var autoCheckEnabled = true
     @State private var didLoadUpdaterState = false
 
     var body: some View {
         VStack(spacing: 8) {
             let appIcon = NSApplication.shared.applicationIconImage ?? VineIconRenderer.makeIcon(isIdle: true)
-            Button {
-                if let url = URL(string: "https://github.com/wildvine/wildvine") {
-                    NSWorkspace.shared.open(url)
-                }
-            } label: {
-                Image(nsImage: appIcon)
-                    .resizable()
-                    .frame(width: 160, height: 160)
-                    .cornerRadius(24)
-                    .shadow(color: self.iconHover ? .accentColor.opacity(0.25) : .clear, radius: 10)
-                    .scaleEffect(self.iconHover ? 1.05 : 1.0)
-            }
-            .buttonStyle(.plain)
-            .focusable(false)
-            .pointingHandCursor()
-            .onHover { hover in
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.72)) { self.iconHover = hover }
-            }
+            Image(nsImage: appIcon)
+                .resizable()
+                .frame(width: 160, height: 160)
+                .cornerRadius(24)
 
             VStack(spacing: 3) {
                 Text("Wildvine")
@@ -44,19 +29,6 @@ struct AboutSettings: View {
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 18)
             }
-
-            VStack(alignment: .center, spacing: 6) {
-                AboutLinkRow(
-                    icon: "chevron.left.slash.chevron.right",
-                    title: "GitHub",
-                    url: "https://github.com/wildvine/wildvine")
-                AboutLinkRow(icon: "globe", title: "Website", url: "https://wildvine.ai")
-                AboutLinkRow(icon: "bird", title: "Twitter", url: "https://twitter.com/steipete")
-                AboutLinkRow(icon: "envelope", title: "Email", url: "mailto:peter@steipete.me")
-            }
-            .frame(maxWidth: .infinity)
-            .multilineTextAlignment(.center)
-            .padding(.vertical, 10)
 
             if let updater {
                 Divider()
@@ -77,7 +49,7 @@ struct AboutSettings: View {
                 }
             }
 
-            Text("© 2025 Peter Steinberger — MIT License.")
+            Text("© 2025 OpenClaw — MIT License.")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .padding(.top, 4)
@@ -144,47 +116,6 @@ struct AboutSettings: View {
         #endif
         suffix += ")"
         return suffix
-    }
-}
-
-@MainActor
-private struct AboutLinkRow: View {
-    let icon: String
-    let title: String
-    let url: String
-
-    @State private var hovering = false
-
-    var body: some View {
-        Button {
-            if let url = URL(string: url) { NSWorkspace.shared.open(url) }
-        } label: {
-            HStack(spacing: 6) {
-                Image(systemName: self.icon)
-                Text(self.title)
-                    .underline(self.hovering, color: .accentColor)
-            }
-            .foregroundColor(.accentColor)
-        }
-        .buttonStyle(.plain)
-        .onHover { self.hovering = $0 }
-        .pointingHandCursor()
-    }
-}
-
-private struct AboutMetaRow: View {
-    let label: String
-    let value: String
-
-    var body: some View {
-        HStack {
-            Text(self.label)
-                .foregroundStyle(.secondary)
-            Spacer()
-            Text(self.value)
-                .font(.caption.monospaced())
-                .foregroundStyle(.primary)
-        }
     }
 }
 
