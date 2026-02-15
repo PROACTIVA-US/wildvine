@@ -27,6 +27,8 @@ apps/android/.cxx/
 *.bun-build
 apps/macos/.build/
 apps/shared/MoltbotKit/.build/
+apps/shared/WildvineKit/.build/
+apps/shared/WildvineKit/WildvineKit/.build/
 **/ModuleCache/
 bin/
 bin/wildvinebot-mac
