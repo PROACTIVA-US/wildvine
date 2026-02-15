@@ -149,13 +149,13 @@ struct WildvineApp: App {
         handler.translatesAutoresizingMaskIntoConstraints = false
         handler.onLeftClick = { [self] in
             HoverHUDController.shared.dismiss(reason: "statusItemClick")
-            self.toggleWebChatPanel()
-        }
-        handler.onRightClick = { [self] in
-            HoverHUDController.shared.dismiss(reason: "statusItemRightClick")
             WebChatManager.shared.closePanel()
             self.isMenuPresented = true
             self.updateStatusHighlight()
+        }
+        handler.onRightClick = { [self] in
+            HoverHUDController.shared.dismiss(reason: "statusItemRightClick")
+            self.toggleWebChatPanel()
         }
         handler.onHoverChanged = { [self] inside in
             HoverHUDController.shared.statusItemHoverChanged(
