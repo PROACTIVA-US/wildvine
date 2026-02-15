@@ -3,6 +3,8 @@ import AVFoundation
 import Foundation
 import Observation
 import SwiftUI
+import WildvineKit
+import WildvineProtocol
 
 /// Menu contents for the Wildvine menu bar extra.
 struct MenuContent: View {
@@ -150,6 +152,11 @@ struct MenuContent: View {
                 .keyboardShortcut(",", modifiers: [.command])
             self.debugMenu
             Button("About Wildvine") { self.open(tab: .about) }
+            if self.state.codeUpdateBehind > 0 {
+                self.statusLine(
+                    label: "Code update available (\(self.state.codeUpdateBehind) commits behind)",
+                    color: .orange)
+            }
             if let updater, updater.isAvailable, self.updateStatus.isUpdateReady {
                 Button("Update ready, restart now?") { updater.checkForUpdates(nil) }
             }
@@ -168,6 +175,9 @@ struct MenuContent: View {
         }
         .task(id: self.state.connectionMode) {
             await self.loadBrowserControlEnabled()
+        }
+        .task {
+            await self.listenForCodeUpdates()
         }
         .onAppear {
             self.startMicObserver()
@@ -575,6 +585,20 @@ struct MenuContent: View {
         return inputs.filter { aliveUIDs.contains($0.uid) }
     }
 
+    private func listenForCodeUpdates() async {
+        let stream = await GatewayConnection.shared.subscribe(bufferingNewest: 1)
+        for await push in stream {
+            if Task.isCancelled { return }
+            guard case let .event(evt) = push, evt.event == "update" else { continue }
+            guard let payload = evt.payload,
+                  let data = try? JSONEncoder().encode(payload),
+                  let parsed = try? JSONDecoder().decode(MenuCodeUpdatePayload.self, from: data),
+                  parsed.available
+            else { continue }
+            await MainActor.run { self.state.codeUpdateBehind = parsed.behind }
+        }
+    }
+
     @MainActor
     private func updateSelectedMicName() {
         let selected = self.state.voiceWakeMicID
@@ -591,5 +615,10 @@ struct MenuContent: View {
         let uid: String
         let name: String
         var id: String { self.uid }
+    }
+
+    private struct MenuCodeUpdatePayload: Decodable {
+        let available: Bool
+        let behind: Int
     }
 }

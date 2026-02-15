@@ -151,6 +151,7 @@ final class AppState {
         didSet { self.ifNotPreview { UserDefaults.standard.set(self.iconOverride.rawValue, forKey: iconOverrideKey) } }
     }
 
+    var codeUpdateBehind: Int = 0
     var isWorking: Bool = false
     var earBoostActive: Bool = false
     var blinkTick: Int = 0

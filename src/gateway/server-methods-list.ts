@@ -44,6 +44,7 @@ const BASE_METHODS = [
   "skills.bins",
   "skills.install",
   "skills.update",
+  "update.check",
   "update.run",
   "voicewake.get",
   "voicewake.set",
@@ -116,4 +117,5 @@ export const GATEWAY_EVENTS = [
   "voicewake.changed",
   "exec.approval.requested",
   "exec.approval.resolved",
+  "update",
 ];

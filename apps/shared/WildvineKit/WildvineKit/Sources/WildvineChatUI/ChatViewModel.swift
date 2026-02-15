@@ -25,6 +25,7 @@ public final class WildvineChatViewModel {
     public var attachments: [WildvinePendingAttachment] = []
     public private(set) var healthOK: Bool = false
     public private(set) var pendingRunCount: Int = 0
+    public private(set) var codeUpdateBehind: Int = 0
 
     public private(set) var sessionKey: String
     public private(set) var sessionId: String?
@@ -454,6 +455,8 @@ public final class WildvineChatViewModel {
             self.handleChatEvent(chat)
         case let .agent(agent):
             self.handleAgentEvent(agent)
+        case let .codeUpdate(behind):
+            self.codeUpdateBehind = behind
         case .seqGap:
             self.errorText = "Event stream interrupted; try refreshing."
             self.clearPendingRuns(reason: nil)

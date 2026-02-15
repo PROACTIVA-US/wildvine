@@ -1,3 +1,4 @@
+import type { UpdateMonitor } from "../update-monitor.js";
 import type { GatewayRequestHandlers } from "./types.js";
 import { loadConfig } from "../../config/config.js";
 import {
@@ -16,7 +17,18 @@ import {
   validateUpdateRunParams,
 } from "../protocol/index.js";
 
+let updateMonitorRef: UpdateMonitor | null = null;
+
+export function setUpdateMonitor(monitor: UpdateMonitor): void {
+  updateMonitorRef = monitor;
+}
+
 export const updateHandlers: GatewayRequestHandlers = {
+  "update.check": async ({ respond }) => {
+    const result = updateMonitorRef?.getLastResult() ?? null;
+    respond(true, result ?? { git: null, lastCheckedAt: null });
+  },
+
   "update.run": async ({ params, respond }) => {
     if (!validateUpdateRunParams(params)) {
       respond(

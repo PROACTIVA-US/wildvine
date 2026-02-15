@@ -143,6 +143,13 @@ struct MacGatewayChatTransport: WildvineChatTransport, Sendable {
                     return nil
                 }
                 return .agent(agent)
+            case "update":
+                guard let payload = evt.payload else { return nil }
+                guard let data = try? JSONEncoder().encode(payload),
+                      let parsed = try? JSONDecoder().decode(CodeUpdatePayload.self, from: data),
+                      parsed.available
+                else { return nil }
+                return .codeUpdate(behind: parsed.behind)
             default:
                 return nil
             }
@@ -151,6 +158,11 @@ struct MacGatewayChatTransport: WildvineChatTransport, Sendable {
             return .seqGap
         }
     }
+}
+
+private struct CodeUpdatePayload: Decodable {
+    let available: Bool
+    let behind: Int
 }
 
 // MARK: - Window controller

@@ -28,9 +28,6 @@ struct WildvineChatComposer: View {
                         self.sessionPicker
                     }
                     self.thinkingPicker
-                    if !self.viewModel.availableModels.isEmpty {
-                        self.modelPicker
-                    }
                     Spacer()
                     self.refreshButton
                     self.attachmentPicker
@@ -96,67 +93,6 @@ struct WildvineChatComposer: View {
         .pickerStyle(.menu)
         .controlSize(.small)
         .frame(maxWidth: 140, alignment: .leading)
-    }
-
-    private var selectedModelLabel: String {
-        if let sel = self.viewModel.selectedModel,
-           let match = self.viewModel.availableModels.first(where: { $0.id == sel })
-        {
-            return match.name
-        }
-        return "Model"
-    }
-
-    private var modelPicker: some View {
-        Menu {
-            let grouped = self.viewModel.groupedModels
-            ForEach(Array(grouped.enumerated()), id: \.offset) { _, group in
-                Section(WildvineChatModelProvider.displayName(for: group.provider)) {
-                    ForEach(group.models) { model in
-                        Button {
-                            self.viewModel.switchModel(to: model.id)
-                        } label: {
-                            if model.id == self.viewModel.selectedModel {
-                                Label(model.name, systemImage: "checkmark")
-                            } else {
-                                Text(model.name)
-                            }
-                        }
-                    }
-                }
-            }
-
-            Divider()
-
-            Section("Providers") {
-                ForEach(self.viewModel.allProviders, id: \.self) { provider in
-                    Button {
-                        self.viewModel.toggleProvider(provider)
-                    } label: {
-                        if self.viewModel.enabledProviders.contains(provider) {
-                            Label(
-                                WildvineChatModelProvider.displayName(for: provider),
-                                systemImage: "checkmark")
-                        } else {
-                            Text(WildvineChatModelProvider.displayName(for: provider))
-                        }
-                    }
-                }
-            }
-        } label: {
-            Text(self.selectedModelLabel)
-                .font(.system(.caption, weight: .medium))
-                .lineLimit(1)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
-                .background(
-                    Capsule()
-                        .fill(Color.accentColor.opacity(0.1)))
-                .overlay(Capsule().strokeBorder(Color.accentColor.opacity(0.2), lineWidth: 0.5))
-        }
-        .menuStyle(.borderlessButton)
-        .frame(maxWidth: 200, alignment: .leading)
-        .help("Model")
     }
 
     private var sessionPicker: some View {
@@ -278,10 +214,28 @@ struct WildvineChatComposer: View {
             Text(self.viewModel.healthOK ? "Connected" : "Connecting…")
                 .font(.caption2)
                 .foregroundStyle(.secondary)
+            if self.viewModel.codeUpdateBehind > 0 {
+                self.updateAvailablePill
+            }
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
         .background(WildvineChatTheme.subtleCard)
+        .clipShape(Capsule())
+    }
+
+    private var updateAvailablePill: some View {
+        HStack(spacing: 4) {
+            Circle()
+                .fill(Color.orange)
+                .frame(width: 6, height: 6)
+            Text("Update available")
+                .font(.caption2)
+                .foregroundStyle(.orange)
+        }
+        .padding(.horizontal, 6)
+        .padding(.vertical, 2)
+        .background(Color.orange.opacity(0.12))
         .clipShape(Capsule())
     }
 

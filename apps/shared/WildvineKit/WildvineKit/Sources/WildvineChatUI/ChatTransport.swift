@@ -5,6 +5,7 @@ public enum WildvineChatTransportEvent: Sendable {
     case tick
     case chat(WildvineChatEventPayload)
     case agent(WildvineAgentEventPayload)
+    case codeUpdate(behind: Int)
     case seqGap
 }
 

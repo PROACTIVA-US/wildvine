@@ -62,6 +62,7 @@ import { GATEWAY_EVENTS, listGatewayMethods } from "./server-methods-list.js";
 import { coreGatewayHandlers } from "./server-methods.js";
 import { createExecApprovalHandlers } from "./server-methods/exec-approval.js";
 import { safeParseJson } from "./server-methods/nodes.helpers.js";
+import { setUpdateMonitor } from "./server-methods/update.js";
 import { hasConnectedMobileNode } from "./server-mobile-nodes.js";
 import { loadGatewayModelCatalog } from "./server-model-catalog.js";
 import { createNodeSubscriptionManager } from "./server-node-subscriptions.js";
@@ -83,6 +84,7 @@ import {
   refreshGatewayHealthSnapshot,
 } from "./server/health-state.js";
 import { loadGatewayTlsRuntime } from "./server/tls.js";
+import { UpdateMonitor } from "./update-monitor.js";
 
 export { __resetModelCatalogCacheForTest } from "./server-model-catalog.js";
 
@@ -611,8 +613,14 @@ export async function startGatewayServer(
     log,
     isNixMode,
   });
+  let updateMonitor: UpdateMonitor | null = null;
   if (!minimalTestGateway) {
     scheduleGatewayUpdateCheck({ cfg: cfgAtStart, log, isNixMode });
+    updateMonitor = new UpdateMonitor(broadcast);
+    setUpdateMonitor(updateMonitor);
+    void updateMonitor
+      .start()
+      .catch((err) => log.warn(`update monitor start failed: ${String(err)}`));
   }
   const tailscaleCleanup = minimalTestGateway
     ? null
@@ -733,6 +741,7 @@ export async function startGatewayServer(
         skillsRefreshTimer = null;
       }
       skillsChangeUnsub();
+      updateMonitor?.stop();
       authRateLimiter?.dispose();
       await close(opts);
     },
