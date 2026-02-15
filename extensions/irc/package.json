@@ -1,0 +1,14 @@
+{
+  "name": "@wildvine/irc",
+  "version": "2026.2.13",
+  "description": "Wildvine IRC channel plugin",
+  "type": "module",
+  "devDependencies": {
+    "wildvine": "workspace:*"
+  },
+  "wildvine": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}

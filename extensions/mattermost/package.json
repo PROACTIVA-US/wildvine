@@ -1,0 +1,29 @@
+{
+  "name": "@wildvine/mattermost",
+  "version": "2026.2.13",
+  "private": true,
+  "description": "Wildvine Mattermost channel plugin",
+  "type": "module",
+  "devDependencies": {
+    "wildvine": "workspace:*"
+  },
+  "wildvine": {
+    "extensions": [
+      "./index.ts"
+    ],
+    "channel": {
+      "id": "mattermost",
+      "label": "Mattermost",
+      "selectionLabel": "Mattermost (plugin)",
+      "docsPath": "/channels/mattermost",
+      "docsLabel": "mattermost",
+      "blurb": "self-hosted Slack-style chat; install the plugin to enable.",
+      "order": 65
+    },
+    "install": {
+      "npmSpec": "@wildvine/mattermost",
+      "localPath": "extensions/mattermost",
+      "defaultChoice": "npm"
+    }
+  }
+}

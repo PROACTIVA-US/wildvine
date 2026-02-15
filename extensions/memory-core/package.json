@@ -1,0 +1,18 @@
+{
+  "name": "@wildvine/memory-core",
+  "version": "2026.2.13",
+  "private": true,
+  "description": "Wildvine core memory search plugin",
+  "type": "module",
+  "devDependencies": {
+    "wildvine": "workspace:*"
+  },
+  "peerDependencies": {
+    "wildvine": ">=2026.1.26"
+  },
+  "wildvine": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}

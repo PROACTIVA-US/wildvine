@@ -1,0 +1,15 @@
+{
+  "name": "@wildvine/google-antigravity-auth",
+  "version": "2026.2.13",
+  "private": true,
+  "description": "Wildvine Google Antigravity OAuth provider plugin",
+  "type": "module",
+  "devDependencies": {
+    "wildvine": "workspace:*"
+  },
+  "wildvine": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}

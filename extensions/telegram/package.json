@@ -1,0 +1,15 @@
+{
+  "name": "@wildvine/telegram",
+  "version": "2026.2.13",
+  "private": true,
+  "description": "Wildvine Telegram channel plugin",
+  "type": "module",
+  "devDependencies": {
+    "wildvine": "workspace:*"
+  },
+  "wildvine": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}

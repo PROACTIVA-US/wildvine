@@ -1,0 +1,15 @@
+{
+  "name": "@wildvine/llm-task",
+  "version": "2026.2.13",
+  "private": true,
+  "description": "Wildvine JSON-only LLM task plugin",
+  "type": "module",
+  "devDependencies": {
+    "wildvine": "workspace:*"
+  },
+  "wildvine": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}

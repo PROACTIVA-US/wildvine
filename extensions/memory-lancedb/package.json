@@ -1,0 +1,20 @@
+{
+  "name": "@wildvine/memory-lancedb",
+  "version": "2026.2.13",
+  "private": true,
+  "description": "Wildvine LanceDB-backed long-term memory plugin with auto-recall/capture",
+  "type": "module",
+  "dependencies": {
+    "@lancedb/lancedb": "^0.26.2",
+    "@sinclair/typebox": "0.34.48",
+    "openai": "^6.22.0"
+  },
+  "devDependencies": {
+    "wildvine": "workspace:*"
+  },
+  "wildvine": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}

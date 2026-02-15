@@ -1,0 +1,16 @@
+{
+  "name": "wildvinebot",
+  "version": "2026.2.12",
+  "description": "Compatibility shim that forwards to wildvine",
+  "bin": {
+    "wildvinebot": "./bin/wildvinebot.js"
+  },
+  "type": "module",
+  "exports": {
+    ".": "./index.js",
+    "./cli-entry": "./bin/wildvinebot.js"
+  },
+  "dependencies": {
+    "wildvine": "workspace:*"
+  }
+}
