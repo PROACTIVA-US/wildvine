@@ -1,4 +1,4 @@
-export type TtsProvider = "elevenlabs" | "openai" | "edge";
+export type TtsProvider = "elevenlabs" | "openai" | "edge" | "chatterbox";
 
 export type TtsMode = "final" | "all";
 
@@ -72,6 +72,15 @@ export type TtsConfig = {
     saveSubtitles?: boolean;
     proxy?: string;
     timeoutMs?: number;
+  };
+  /** Chatterbox (local) configuration. */
+  chatterbox?: {
+    /** Base URL for the Chatterbox TTS server (default: http://127.0.0.1:8004/v1). */
+    baseUrl?: string;
+    /** Model name (default: chatterbox-turbo). */
+    model?: string;
+    /** Voice filename from the voices directory (default: Emily.wav). */
+    voice?: string;
   };
   /** Optional path for local TTS user preferences JSON. */
   prefsPath?: string;

@@ -39,6 +39,7 @@ export const ttsHandlers: GatewayRequestHandlers = {
         hasOpenAIKey: Boolean(resolveTtsApiKey(config, "openai")),
         hasElevenLabsKey: Boolean(resolveTtsApiKey(config, "elevenlabs")),
         edgeEnabled: isTtsProviderConfigured(config, "edge"),
+        chatterboxConfigured: isTtsProviderConfigured(config, "chatterbox"),
       });
     } catch (err) {
       respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, formatForLog(err)));
@@ -100,13 +101,18 @@ export const ttsHandlers: GatewayRequestHandlers = {
   },
   "tts.setProvider": async ({ params, respond }) => {
     const provider = typeof params.provider === "string" ? params.provider.trim() : "";
-    if (provider !== "openai" && provider !== "elevenlabs" && provider !== "edge") {
+    if (
+      provider !== "openai" &&
+      provider !== "elevenlabs" &&
+      provider !== "edge" &&
+      provider !== "chatterbox"
+    ) {
       respond(
         false,
         undefined,
         errorShape(
           ErrorCodes.INVALID_REQUEST,
-          "Invalid provider. Use openai, elevenlabs, or edge.",
+          "Invalid provider. Use openai, elevenlabs, edge, or chatterbox.",
         ),
       );
       return;
@@ -128,6 +134,13 @@ export const ttsHandlers: GatewayRequestHandlers = {
       const prefsPath = resolveTtsPrefsPath(config);
       respond(true, {
         providers: [
+          {
+            id: "chatterbox",
+            name: "Chatterbox (Local)",
+            configured: isTtsProviderConfigured(config, "chatterbox"),
+            models: ["chatterbox-turbo"],
+            voices: [config.chatterbox.voice],
+          },
           {
             id: "openai",
             name: "OpenAI",

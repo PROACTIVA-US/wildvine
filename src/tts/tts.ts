@@ -26,6 +26,7 @@ import { stripMarkdown } from "../line/markdown-to-line.js";
 import { isVoiceCompatibleAudio } from "../media/audio.js";
 import { CONFIG_DIR, resolveUserPath } from "../utils.js";
 import {
+  chatterboxTTS,
   edgeTTS,
   elevenLabsTTS,
   inferEdgeExtension,
@@ -54,6 +55,9 @@ const DEFAULT_OPENAI_VOICE = "alloy";
 const DEFAULT_EDGE_VOICE = "en-US-MichelleNeural";
 const DEFAULT_EDGE_LANG = "en-US";
 const DEFAULT_EDGE_OUTPUT_FORMAT = "audio-24khz-48kbitrate-mono-mp3";
+const DEFAULT_CHATTERBOX_BASE_URL = "http://127.0.0.1:8004/v1";
+const DEFAULT_CHATTERBOX_MODEL = "chatterbox-turbo";
+const DEFAULT_CHATTERBOX_VOICE = "Emily.wav";
 
 const DEFAULT_ELEVENLABS_VOICE_SETTINGS = {
   stability: 0.5,
@@ -126,6 +130,11 @@ export type ResolvedTtsConfig = {
     saveSubtitles: boolean;
     proxy?: string;
     timeoutMs?: number;
+  };
+  chatterbox: {
+    baseUrl: string;
+    model: string;
+    voice: string;
   };
   prefsPath?: string;
   maxTextLength: number;
@@ -301,6 +310,11 @@ export function resolveTtsConfig(cfg: WildvineConfig): ResolvedTtsConfig {
       proxy: raw.edge?.proxy?.trim() || undefined,
       timeoutMs: raw.edge?.timeoutMs,
     },
+    chatterbox: {
+      baseUrl: raw.chatterbox?.baseUrl?.trim().replace(/\/+$/, "") || DEFAULT_CHATTERBOX_BASE_URL,
+      model: raw.chatterbox?.model?.trim() || DEFAULT_CHATTERBOX_MODEL,
+      voice: raw.chatterbox?.voice?.trim() || DEFAULT_CHATTERBOX_VOICE,
+    },
     prefsPath: raw.prefsPath,
     maxTextLength: raw.maxTextLength ?? DEFAULT_MAX_TEXT_LENGTH,
     timeoutMs: raw.timeoutMs ?? DEFAULT_TIMEOUT_MS,
@@ -439,7 +453,7 @@ export function getTtsProvider(config: ResolvedTtsConfig, prefsPath: string): Tt
   if (resolveTtsApiKey(config, "elevenlabs")) {
     return "elevenlabs";
   }
-  return "edge";
+  return "chatterbox";
 }
 
 export function setTtsProvider(prefsPath: string, provider: TtsProvider): void {
@@ -506,7 +520,7 @@ export function resolveTtsApiKey(
   return undefined;
 }
 
-export const TTS_PROVIDERS = ["openai", "elevenlabs", "edge"] as const;
+export const TTS_PROVIDERS = ["chatterbox", "openai", "elevenlabs", "edge"] as const;
 
 export function resolveTtsProviderOrder(primary: TtsProvider): TtsProvider[] {
   return [primary, ...TTS_PROVIDERS.filter((provider) => provider !== primary)];
@@ -515,6 +529,9 @@ export function resolveTtsProviderOrder(primary: TtsProvider): TtsProvider[] {
 export function isTtsProviderConfigured(config: ResolvedTtsConfig, provider: TtsProvider): boolean {
   if (provider === "edge") {
     return config.edge.enabled;
+  }
+  if (provider === "chatterbox") {
+    return true; // local service, no API key needed
   }
   return Boolean(resolveTtsApiKey(config, provider));
 }
@@ -612,6 +629,34 @@ export async function textToSpeech(params: {
           latencyMs: Date.now() - providerStart,
           provider,
           outputFormat: edgeResult.outputFormat,
+          voiceCompatible,
+        };
+      }
+
+      if (provider === "chatterbox") {
+        const audioBuffer = await chatterboxTTS({
+          text: params.text,
+          baseUrl: config.chatterbox.baseUrl,
+          model: config.chatterbox.model,
+          voice: config.chatterbox.voice,
+          responseFormat: channelId === "telegram" ? "opus" : "wav",
+          timeoutMs: config.timeoutMs,
+        });
+
+        const latencyMs = Date.now() - providerStart;
+        const ext = channelId === "telegram" ? ".opus" : ".wav";
+        const tempDir = mkdtempSync(path.join(tmpdir(), "tts-"));
+        const audioPath = path.join(tempDir, `voice-${Date.now()}${ext}`);
+        writeFileSync(audioPath, audioBuffer);
+        scheduleCleanup(tempDir);
+        const voiceCompatible = isVoiceCompatibleAudio({ fileName: audioPath });
+
+        return {
+          success: true,
+          audioPath,
+          latencyMs,
+          provider,
+          outputFormat: channelId === "telegram" ? "opus" : "wav",
           voiceCompatible,
         };
       }

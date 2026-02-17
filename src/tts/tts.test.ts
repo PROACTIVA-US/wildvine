@@ -429,7 +429,7 @@ describe("tts", () => {
       );
     });
 
-    it("falls back to Edge when no API keys are present", () => {
+    it("falls back to Chatterbox when no API keys are present", () => {
       withEnv(
         {
           OPENAI_API_KEY: undefined,
@@ -439,7 +439,7 @@ describe("tts", () => {
         () => {
           const config = resolveTtsConfig(baseCfg);
           const provider = getTtsProvider(config, "/tmp/tts-prefs-edge.json");
-          expect(provider).toBe("edge");
+          expect(provider).toBe("chatterbox");
         },
       );
     });
