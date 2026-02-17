@@ -1,0 +1,15 @@
+{
+  "name": "@wildvine/veria-context",
+  "version": "2026.2.17",
+  "private": true,
+  "description": "Proactive knowledge injection for Veria agents",
+  "type": "module",
+  "devDependencies": {
+    "wildvine": "workspace:*"
+  },
+  "wildvine": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}

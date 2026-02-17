@@ -1,0 +1,14 @@
+{
+  "id": "veria-context-injector",
+  "kind": "integration",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "default": true
+      }
+    }
+  }
+}
