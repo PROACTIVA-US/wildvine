@@ -271,6 +271,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
         self.state = AppStateStore.shared
+        // Set activation policy synchronously so macOS registers the Dock icon
+        // before finishing launch. The async DockIconManager call is too late —
+        // macOS will have already decided the app is an accessory.
+        if self.state?.showDockIcon ?? true {
+            NSApp.setActivationPolicy(.regular)
+        }
         AppActivationPolicy.apply(showDockIcon: self.state?.showDockIcon ?? false)
         if let state {
             Task { await ConnectionModeCoordinator.shared.apply(mode: state.connectionMode, paused: state.isPaused) }
