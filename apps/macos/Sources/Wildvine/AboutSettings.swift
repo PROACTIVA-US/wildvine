@@ -49,7 +49,7 @@ struct AboutSettings: View {
                 }
             }
 
-            Text("© 2025 OpenClaw — MIT License.")
+            Text("© 2025 Wildvine — MIT License.")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .padding(.top, 4)

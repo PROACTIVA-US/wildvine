@@ -56,9 +56,9 @@ Wildvine's tagline---**"Grow anywhere, automate anything"**---captures its desig
 
 ## 2. Project Origins & Evolution
 
-### 2.1 Warelay: The Beginning (November 24, 2025)
+### 2.1 Project Inception (November 24, 2025)
 
-Wildvine began life as **Warelay**, a CLI tool for relaying messages through Twilio webhooks. The very first commit on November 24, 2025 established a Node.js/TypeScript project with:
+Wildvine started as a CLI tool for relaying messages through Twilio webhooks. The very first commit on November 24, 2025 established a Node.js/TypeScript project with:
 
 - Twilio SMS/WhatsApp webhook support
 - Tailscale Funnel integration for secure tunneling
@@ -88,9 +88,9 @@ Key architectural decisions during this period included:
 - A **configuration system** using YAML/JSON with schema validation
 - An **extension/plugin system** allowing third-party channel integrations
 
-### 2.4 The Wildvine Identity (February 2026)
+### 2.4 Maturity (February 2026)
 
-On **February 14--15, 2026**, the project was formally established under the **Wildvine** identity with dedicated branding, a logo, the "Grow anywhere, automate anything" tagline, and the PROACTIVA-US organization. The macOS app received its Wildvine branding, the WildvineKit shared framework was established for cross-platform Apple development, and the project reached its current mature form.
+In February 2026, Wildvine reached its current mature form under the PROACTIVA-US organization with dedicated branding, a logo, the "Grow anywhere, automate anything" tagline, native macOS/iOS/Android applications, and the WildvineKit shared framework for cross-platform Apple development.
 
 ---
 

@@ -20,7 +20,7 @@ import { renderTable } from "../terminal/table.js";
 import { theme } from "../terminal/theme.js";
 
 const UPSTREAM_REMOTE = "upstream";
-const UPSTREAM_URL = "https://github.com/openclaw/openclaw.git";
+const UPSTREAM_URL = "https://github.com/wildvine/wildvine.git";
 const DEFAULT_UPSTREAM_BRANCH = "main";
 
 export type SyncOptions = {

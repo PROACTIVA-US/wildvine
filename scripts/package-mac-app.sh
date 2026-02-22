@@ -225,12 +225,12 @@ else
 fi
 
 echo "📦 Copying WildvineKit resources"
-OPENCLAWKIT_BUNDLE="$(build_path_for_arch "$PRIMARY_ARCH")/$BUILD_CONFIG/WildvineKit_WildvineKit.bundle"
-if [ -d "$OPENCLAWKIT_BUNDLE" ]; then
+WILDVINEKIT_BUNDLE="$(build_path_for_arch "$PRIMARY_ARCH")/$BUILD_CONFIG/WildvineKit_WildvineKit.bundle"
+if [ -d "$WILDVINEKIT_BUNDLE" ]; then
   rm -rf "$APP_ROOT/Contents/Resources/WildvineKit_WildvineKit.bundle"
-  cp -R "$OPENCLAWKIT_BUNDLE" "$APP_ROOT/Contents/Resources/WildvineKit_WildvineKit.bundle"
+  cp -R "$WILDVINEKIT_BUNDLE" "$APP_ROOT/Contents/Resources/WildvineKit_WildvineKit.bundle"
 else
-  echo "WARN: WildvineKit resource bundle not found at $OPENCLAWKIT_BUNDLE (continuing)" >&2
+  echo "WARN: WildvineKit resource bundle not found at $WILDVINEKIT_BUNDLE (continuing)" >&2
 fi
 
 echo "📦 Copying Textual resources"
