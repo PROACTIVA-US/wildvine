@@ -249,6 +249,12 @@ importers:
         specifier: workspace:*
         version: link:../..
 
+  extensions/cc-integration:
+    devDependencies:
+      wildvine:
+        specifier: workspace:*
+        version: link:../..
+
   extensions/copilot-proxy:
     devDependencies:
       wildvine:
@@ -514,6 +520,12 @@ importers:
       zod:
         specifier: ^4.3.6
         version: 4.3.6
+    devDependencies:
+      wildvine:
+        specifier: workspace:*
+        version: link:../..
+
+  extensions/veria-context:
     devDependencies:
       wildvine:
         specifier: workspace:*

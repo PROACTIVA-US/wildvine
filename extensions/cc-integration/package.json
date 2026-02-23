@@ -1,0 +1,15 @@
+{
+  "name": "@wildvine/cc-integration",
+  "version": "2026.2.22",
+  "private": true,
+  "description": "CommandCentral integration — KB search, health checks, and more",
+  "type": "module",
+  "devDependencies": {
+    "wildvine": "workspace:*"
+  },
+  "wildvine": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}
