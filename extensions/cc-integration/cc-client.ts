@@ -489,6 +489,45 @@ export async function ccSkillsResolve(taskDescription: string): Promise<CCSkillR
   });
 }
 
+// ── Knowledge Capture ─────────────────────────────────────
+
+export interface CCKnowledgeCaptureRequest {
+  content: string;
+  source: string;
+  agent_id?: string;
+  session_id?: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface CCKnowledgeCaptureResponse {
+  id: string;
+  status: string;
+  message?: string;
+}
+
+export async function ccKnowledgeCapture(
+  request: CCKnowledgeCaptureRequest,
+): Promise<CCKnowledgeCaptureResponse> {
+  return ccFetch<CCKnowledgeCaptureResponse>("/api/knowledge/capture", {
+    method: "POST",
+    body: JSON.stringify(request),
+  });
+}
+
+export async function ccKnowledgeSessionEnd(
+  agentId: string,
+  summary: string,
+  sessionId?: string,
+): Promise<CCKnowledgeCaptureResponse> {
+  return ccFetch<CCKnowledgeCaptureResponse>(
+    `/api/kb/memory/${encodeURIComponent(agentId)}/session-end`,
+    {
+      method: "POST",
+      body: JSON.stringify({ summary, session_id: sessionId }),
+    },
+  );
+}
+
 // ── Notes (via Agent Inbox) ───────────────────────────────
 
 export interface CCInboxItem {

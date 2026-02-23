@@ -5,13 +5,14 @@
  *
  * Agent tools: cc_kb_search, cc_pipeline_run, cc_pipeline_list, cc_run_status,
  *   cc_governor_list, cc_governor_decide, cc_arena_chat, cc_inbox_list, cc_inbox_ack,
- *   cc_vislzr_canvases, cc_skill_search
- * Gateway RPCs: cc.health, cc.kb.search, cc.pipelines.list, cc.runs.create,
- *   cc.runs.get, cc.governor.pending, cc.governor.approve, cc.governor.deny,
- *   cc.arena.sessions, cc.arena.chat, cc.inbox.list, cc.inbox.ack,
+ *   cc_vislzr_canvases, cc_skill_search, cc_knowledge_capture, memory_export
+ * Gateway RPCs: cc.health, cc.kb.search, cc.knowledge.capture, cc.pipelines.list,
+ *   cc.runs.create, cc.runs.get, cc.governor.pending, cc.governor.approve,
+ *   cc.governor.deny, cc.arena.sessions, cc.arena.chat, cc.inbox.list, cc.inbox.ack,
  *   cc.vislzr.canvases, cc.vislzr.canvas, cc.skills.list, cc.skills.get,
  *   cc.skills.resolve
- * Hook: before_agent_start (notifies agents that CC tools are available)
+ * Hooks: before_agent_start (notifies agents that CC tools are available),
+ *   session_end (pushes session summary to CC KB)
  */
 
 import type { WildvinePluginApi } from "wildvine/plugin-sdk";
@@ -47,6 +48,9 @@ import {
   ccSkillsList,
   ccSkillGet,
   ccSkillsResolve,
+  // Knowledge Capture
+  ccKnowledgeCapture,
+  ccKnowledgeSessionEnd,
   // Notes
   ccNotesCapture,
   ccNotesList,
@@ -108,7 +112,7 @@ export default {
   id: "cc-integration",
   name: "CommandCentral Integration",
   description:
-    "Bridges Wildvine to CommandCentral — KB search, pipelines, governor, arena, inbox, VISLZR",
+    "Bridges Wildvine to CommandCentral — KB search, knowledge capture, pipelines, governor, arena, inbox, VISLZR",
 
   register(api: WildvinePluginApi) {
     // ── Agent Tool: cc_kb_search ──────────────────────────────
@@ -724,6 +728,103 @@ export default {
       { optional: true },
     );
 
+    // ── Agent Tool: cc_knowledge_capture ────────────────────
+
+    api.registerTool(
+      {
+        name: "cc_knowledge_capture",
+        label: "CC Knowledge Capture",
+        description:
+          "Push knowledge, learnings, or session insights to CommandCentral's knowledge base. " +
+          "Use this to persist important discoveries, decisions, or patterns that should be " +
+          "available across all future sessions and agents.",
+        parameters: Type.Object({
+          content: Type.String({ description: "The knowledge content to capture" }),
+          source: Type.Optional(
+            Type.String({
+              description: 'Source label, e.g. "wildvine-session", "agent-discovery"',
+            }),
+          ),
+          agent_id: Type.Optional(
+            Type.String({ description: "Agent that produced this knowledge" }),
+          ),
+          session_id: Type.Optional(Type.String({ description: "Session ID for attribution" })),
+          metadata: Type.Optional(
+            Type.Object({}, { additionalProperties: true, description: "Arbitrary metadata" }),
+          ),
+        }),
+
+        async execute(_id: string, params: Record<string, unknown>) {
+          const content = String(params.content || "").trim();
+          if (!content) return textResult("Error: content is required.");
+          try {
+            const result = await ccKnowledgeCapture({
+              content,
+              source: typeof params.source === "string" ? params.source : "wildvine-agent",
+              agent_id: typeof params.agent_id === "string" ? params.agent_id : undefined,
+              session_id: typeof params.session_id === "string" ? params.session_id : undefined,
+              metadata:
+                params.metadata && typeof params.metadata === "object"
+                  ? (params.metadata as Record<string, unknown>)
+                  : undefined,
+            });
+            return textResult(
+              `Knowledge captured (id: ${result.id}). Status: ${result.status}`,
+              result,
+            );
+          } catch (err) {
+            return textResult(ccErrorText(err, "CC knowledge capture"));
+          }
+        },
+      },
+      { optional: true },
+    );
+
+    // ── Agent Tool: memory_export ─────────────────────────────
+
+    api.registerTool(
+      {
+        name: "memory_export",
+        label: "Export Memory to CC",
+        description:
+          "Manually export a Wildvine memory entry or session summary to CommandCentral's " +
+          "knowledge base. Use this when you want to explicitly push important session context, " +
+          "decisions, or learnings to CC for cross-session persistence.",
+        parameters: Type.Object({
+          content: Type.String({ description: "Memory content to export" }),
+          agent_id: Type.Optional(Type.String({ description: "Originating agent ID" })),
+          session_id: Type.Optional(Type.String({ description: "Originating session ID" })),
+          tags: Type.Optional(
+            Type.Array(Type.String(), { description: "Tags for categorization" }),
+          ),
+        }),
+
+        async execute(_id: string, params: Record<string, unknown>) {
+          const content = String(params.content || "").trim();
+          if (!content) return textResult("Error: content is required.");
+          try {
+            const result = await ccKnowledgeCapture({
+              content,
+              source: "wildvine-memory-export",
+              agent_id: typeof params.agent_id === "string" ? params.agent_id : undefined,
+              session_id: typeof params.session_id === "string" ? params.session_id : undefined,
+              metadata: {
+                tags: Array.isArray(params.tags) ? params.tags : undefined,
+                exported_at: new Date().toISOString(),
+              },
+            });
+            return textResult(
+              `Memory exported to CC KB (id: ${result.id}). Status: ${result.status}`,
+              result,
+            );
+          } catch (err) {
+            return textResult(ccErrorText(err, "Memory export to CC"));
+          }
+        },
+      },
+      { optional: true },
+    );
+
     // ── Gateway RPCs ──────────────────────────────────────────
 
     api.registerGatewayMethod("cc.health", async ({ respond }) => {
@@ -755,6 +856,31 @@ export default {
         respond(true, response);
       } catch (err) {
         respond(false, { error: err instanceof Error ? err.message : "CC KB search failed" });
+      }
+    });
+
+    api.registerGatewayMethod("cc.knowledge.capture", async ({ params, respond }) => {
+      const content = typeof params.content === "string" ? params.content.trim() : "";
+      if (!content) {
+        respond(false, { error: "content is required" });
+        return;
+      }
+      try {
+        const result = await ccKnowledgeCapture({
+          content,
+          source: typeof params.source === "string" ? params.source : "wildvine-rpc",
+          agent_id: typeof params.agent_id === "string" ? params.agent_id : undefined,
+          session_id: typeof params.session_id === "string" ? params.session_id : undefined,
+          metadata:
+            params.metadata && typeof params.metadata === "object"
+              ? (params.metadata as Record<string, unknown>)
+              : undefined,
+        });
+        respond(true, result);
+      } catch (err) {
+        respond(false, {
+          error: err instanceof Error ? err.message : "CC knowledge capture failed",
+        });
       }
     });
 
@@ -1145,8 +1271,39 @@ export default {
           "- cc_inbox_list / cc_inbox_ack: Read and acknowledge inbox notifications\n" +
           "- cc_vislzr_canvases: Browse visual canvases (mindmaps, dashboards)\n" +
           "- cc_skill_search: Search CC's skill library (operations, safety, execution patterns)\n" +
+          "- cc_knowledge_capture: Push knowledge and learnings to CC's knowledge base\n" +
+          "- memory_export: Export session memory to CC for cross-session persistence\n" +
           "- notes_capture: Capture a note/thought/idea for the user's living notes system",
       };
+    });
+
+    // ── Hook: session_end ──────────────────────────────────────
+
+    api.on("session_end", async (event, ctx) => {
+      const reachable = await isCCReachable();
+      if (!reachable) return;
+
+      try {
+        const agentId = ctx.agentId || "unknown";
+        const sessionId = ctx.sessionId || event.sessionId;
+
+        // Build a minimal summary from available data
+        const content =
+          `Session ended (${event.messageCount} messages` +
+          (event.durationMs ? `, ${Math.round(event.durationMs / 1000)}s` : "") +
+          `)`;
+
+        if (event.messageCount < 2) return; // Skip trivial sessions
+
+        await ccKnowledgeSessionEnd(agentId, content, sessionId);
+        api.logger.debug?.(
+          `cc-integration: session summary pushed to CC KB (agent=${agentId}, session=${sessionId}, msgs=${event.messageCount})`,
+        );
+      } catch (err) {
+        // Non-fatal — don't break session teardown
+        const msg = err instanceof Error ? err.message : String(err);
+        api.logger.warn(`cc-integration: failed to push session summary to CC: ${msg}`);
+      }
     });
 
     api.logger.info(`cc-integration: registered (CC hub: ${getCCBaseUrl()})`);
