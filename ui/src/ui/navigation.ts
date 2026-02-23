@@ -396,11 +396,11 @@ export function subtitleForTab(tab: Tab) {
     case "logs":
       return "Live tail of the gateway file logs.";
     case "cc-pipelines":
-      return "Run and monitor CommandCentral pipelines.";
+      return "Run and monitor pipelines.";
     case "cc-governor":
       return "Approve or deny pending items in the governance queue.";
     case "cc-kb":
-      return "Search CommandCentral's knowledge base.";
+      return "Search the knowledge base.";
     case "cc-arena":
       return "Multi-agent deliberation sessions.";
     default:

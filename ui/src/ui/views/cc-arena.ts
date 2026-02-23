@@ -21,7 +21,7 @@ export function renderCcArena(props: CcArenaProps) {
       <div class="card">
         <div class="card-body">
           <div class="pill danger">${props.error}</div>
-          <p class="muted">CommandCentral may not be running.</p>
+          <p class="muted">Backend services may not be running. Start them from Settings > Gateway.</p>
         </div>
       </div>
     `;

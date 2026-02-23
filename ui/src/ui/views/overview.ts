@@ -256,8 +256,8 @@ export function renderOverview(props: OverviewProps) {
     </section>
 
     <section class="card" style="margin-top: 18px;">
-      <div class="card-title">CommandCentral</div>
-      <div class="card-sub">Integrated orchestration platform status.</div>
+      <div class="card-title">Backend Services</div>
+      <div class="card-sub">Backend service health and controls.</div>
       <div class="stat-grid" style="margin-top: 16px;">
         ${(() => {
           const cc = props.ccProcessStatus;

@@ -23,7 +23,7 @@ export function renderCcPipelines(props: CcPipelinesProps) {
       <div class="card">
         <div class="card-body">
           <div class="pill danger">${props.error}</div>
-          <p class="muted">CommandCentral may not be running. Check the Overview tab for CC process status.</p>
+          <p class="muted">Backend services may not be running. Start them from Settings > Gateway.</p>
         </div>
       </div>
     `;

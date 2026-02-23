@@ -86,3 +86,6 @@ USER.md
 !.agent/workflows/
 /local/
 package-lock.json
+
+# Runtime agent workspace (bootstrap files tracked separately)
+wildvine-workspace/

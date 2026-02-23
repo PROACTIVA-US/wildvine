@@ -58,7 +58,7 @@ export async function loadVineView(state: VineViewState): Promise<void> {
         },
         {
           id: "cc",
-          label: "CommandCentral",
+          label: "Backend Services",
           type: "branch",
           status: ccHealthy ? "healthy" : "error",
           children: [

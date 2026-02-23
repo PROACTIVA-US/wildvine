@@ -139,7 +139,7 @@ export function renderLivingNote(props: LivingNoteViewProps) {
       <div class="stack" style="gap: 12px;">
         <div class="card">
           <div class="card-title">Knowledge Search</div>
-          <div class="card-sub">Search across Wildvine + CommandCentral knowledge</div>
+          <div class="card-sub">Search across Wildvine knowledge</div>
           <div class="row" style="margin-top: 12px;">
             <input type="text" style="flex: 1;" placeholder="Search knowledge base..." .value=${props.searchQuery}
               @input=${(e: InputEvent) => props.onSearchQueryChange((e.target as HTMLInputElement).value)}

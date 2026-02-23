@@ -1,5 +1,5 @@
 import { html, nothing } from "lit";
-import type { SkillMessageMap } from "../controllers/skills.ts";
+import type { CCSkillSummary, SkillMessageMap } from "../controllers/skills.ts";
 import type { SkillStatusEntry, SkillStatusReport } from "../types.ts";
 import { clampText } from "../format.ts";
 
@@ -50,6 +50,9 @@ export type SkillsProps = {
   edits: Record<string, string>;
   busyKey: string | null;
   messages: SkillMessageMap;
+  ccSkills: CCSkillSummary[];
+  ccSkillsLoading: boolean;
+  ccSkillsError: string | null;
   onFilterChange: (next: string) => void;
   onRefresh: () => void;
   onToggle: (skillKey: string, enabled: boolean) => void;
@@ -119,6 +122,86 @@ export function renderSkills(props: SkillsProps) {
                   </details>
                 `;
               })}
+            </div>
+          `
+      }
+    </section>
+
+    ${renderDevSkills(props)}
+  `;
+}
+
+function ccPriorityBadge(priority: string) {
+  const colors: Record<string, string> = {
+    P0: "var(--color-success, #22c55e)",
+    P1: "var(--color-warning, #eab308)",
+    P2: "var(--color-muted, #6b7280)",
+  };
+  const color = colors[priority] ?? colors.P2;
+  return html`<span class="badge" style="background: ${color}; color: #fff; font-size: 11px">${priority}</span>`;
+}
+
+function renderDevSkills(props: SkillsProps) {
+  if (props.ccSkillsError) {
+    return html`
+      <section class="card" style="margin-top: 16px;">
+        <div class="card-title">Dev Skills</div>
+        <div class="card-sub">Skills from the backend skill library.</div>
+        <div class="muted" style="margin-top: 12px;">${props.ccSkillsError}</div>
+      </section>
+    `;
+  }
+
+  const filter = props.filter.trim().toLowerCase();
+  const filtered = filter
+    ? props.ccSkills.filter((s) =>
+        [s.name, s.description, ...s.keywords].join(" ").toLowerCase().includes(filter),
+      )
+    : props.ccSkills;
+
+  return html`
+    <section class="card" style="margin-top: 16px;">
+      <div class="row" style="justify-content: space-between;">
+        <div>
+          <div class="card-title">Dev Skills</div>
+          <div class="card-sub">Skills from the backend skill library.</div>
+        </div>
+        ${
+          props.ccSkillsLoading
+            ? html`
+                <span class="muted">Loading...</span>
+              `
+            : nothing
+        }
+      </div>
+      ${
+        filtered.length === 0
+          ? html`
+              <div class="muted" style="margin-top: 12px">No dev skills found.</div>
+            `
+          : html`
+            <div class="list" style="margin-top: 12px;">
+              ${filtered.map(
+                (skill) => html`
+                  <div class="list-item">
+                    <div class="list-main">
+                      <div class="list-title">
+                        ${skill.name} ${ccPriorityBadge(skill.priority)}
+                      </div>
+                      <div class="list-sub">${skill.description}</div>
+                      ${
+                        skill.keywords.length > 0
+                          ? html`
+                            <div class="chip-row" style="margin-top: 6px;">
+                              ${skill.keywords.map((kw) => html`<span class="chip">${kw}</span>`)}
+                            </div>
+                          `
+                          : nothing
+                      }
+                    </div>
+                  </div>
+                `,
+              )}
             </div>
           `
       }

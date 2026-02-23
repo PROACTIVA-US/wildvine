@@ -1,6 +1,13 @@
 import type { GatewayBrowserClient } from "../gateway.ts";
 import type { SkillStatusReport } from "../types.ts";
 
+export type CCSkillSummary = {
+  name: string;
+  description: string;
+  priority: string;
+  keywords: string[];
+};
+
 export type SkillsState = {
   client: GatewayBrowserClient | null;
   connected: boolean;
@@ -10,6 +17,9 @@ export type SkillsState = {
   skillsBusyKey: string | null;
   skillEdits: Record<string, string>;
   skillMessages: SkillMessageMap;
+  ccSkills: CCSkillSummary[];
+  ccSkillsLoading: boolean;
+  ccSkillsError: string | null;
 };
 
 export type SkillMessage = {
@@ -64,6 +74,25 @@ export async function loadSkills(state: SkillsState, options?: LoadSkillsOptions
     state.skillsError = getErrorMessage(err);
   } finally {
     state.skillsLoading = false;
+  }
+}
+
+export async function loadCcSkills(state: SkillsState) {
+  if (!state.client || !state.connected) {
+    return;
+  }
+  if (state.ccSkillsLoading) {
+    return;
+  }
+  state.ccSkillsLoading = true;
+  state.ccSkillsError = null;
+  try {
+    const res = await state.client.request<{ skills?: CCSkillSummary[] }>("cc.skills.list", {});
+    state.ccSkills = res?.skills ?? [];
+  } catch {
+    state.ccSkillsError = "Backend services not available";
+  } finally {
+    state.ccSkillsLoading = false;
   }
 }
 

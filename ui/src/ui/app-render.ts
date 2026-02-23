@@ -58,6 +58,7 @@ import { loadPresence } from "./controllers/presence.ts";
 import { deleteSession, loadSessions, patchSession } from "./controllers/sessions.ts";
 import {
   installSkill,
+  loadCcSkills,
   loadSkills,
   saveSkillApiKey,
   updateSkillEdit,
@@ -160,7 +161,7 @@ export function renderApp(state: AppViewState) {
               <img src=${basePath ? `${basePath}/favicon.svg` : "/favicon.svg"} alt="Wildvine" />
             </div>
             <div class="brand-text">
-              <div class="brand-title" style="background: linear-gradient(135deg, #7B2FBE, #00BCD4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">WILDVINE</div>
+              <div class="brand-title"><span style="font-weight:700">wild</span><span style="font-weight:400">vine</span></div>
             </div>
           </div>
         </div>
@@ -1014,8 +1015,14 @@ export function renderApp(state: AppViewState) {
                 edits: state.skillEdits,
                 messages: state.skillMessages,
                 busyKey: state.skillsBusyKey,
+                ccSkills: state.ccSkills ?? [],
+                ccSkillsLoading: state.ccSkillsLoading ?? false,
+                ccSkillsError: state.ccSkillsError ?? null,
                 onFilterChange: (next) => (state.skillsFilter = next),
-                onRefresh: () => loadSkills(state, { clearMessages: true }),
+                onRefresh: () => {
+                  void loadSkills(state, { clearMessages: true });
+                  void loadCcSkills(state);
+                },
                 onToggle: (key, enabled) => updateSkillEnabled(state, key, enabled),
                 onEdit: (key, value) => updateSkillEdit(state, key, value),
                 onSaveKey: (key) => saveSkillApiKey(state, key),

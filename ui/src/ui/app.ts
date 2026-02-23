@@ -15,7 +15,7 @@ import type { DevicePairingList } from "./controllers/devices.ts";
 import type { ExecApprovalRequest } from "./controllers/exec-approval.ts";
 import type { ExecApprovalsFile, ExecApprovalsSnapshot } from "./controllers/exec-approvals.ts";
 import type { CCInboxItem, CCKbSearchResult } from "./controllers/notes.ts";
-import type { SkillMessage } from "./controllers/skills.ts";
+import type { CCSkillSummary, SkillMessage } from "./controllers/skills.ts";
 import type { GatewayBrowserClient, GatewayHelloOk } from "./gateway.ts";
 import type { Tab } from "./navigation.ts";
 import type { ResolvedTheme, ThemeMode } from "./theme.ts";
@@ -307,6 +307,9 @@ export class WildvineApp extends LitElement {
   @state() skillEdits: Record<string, string> = {};
   @state() skillsBusyKey: string | null = null;
   @state() skillMessages: Record<string, SkillMessage> = {};
+  @state() ccSkills: CCSkillSummary[] = [];
+  @state() ccSkillsLoading = false;
+  @state() ccSkillsError: string | null = null;
 
   @state() debugLoading = false;
   @state() debugStatus: StatusSummary | null = null;
