@@ -1,5 +1,14 @@
 import type { EventLogEntry } from "./app-events.ts";
 import type { CompactionStatus } from "./app-tool-stream.ts";
+import type {
+  CCPipelineSummary,
+  CCRunSummary,
+  CCReferral,
+  CCKbResult,
+  CCArenaSession,
+  CCArenaMessage,
+  CCProcessStatus,
+} from "./controllers/cc-data.ts";
 import type { DevicePairingList } from "./controllers/devices.ts";
 import type { ExecApprovalRequest } from "./controllers/exec-approval.ts";
 import type { ExecApprovalsFile, ExecApprovalsSnapshot } from "./controllers/exec-approvals.ts";
@@ -219,6 +228,29 @@ export type AppViewState = {
   logsLimit: number;
   logsMaxBytes: number;
   logsAtBottom: boolean;
+  // ── CommandCentral state ─────────────────────────────────
+  ccPipelinesLoading: boolean;
+  ccPipelines: CCPipelineSummary[];
+  ccPipelinesError: string | null;
+  ccRunsLoading: boolean;
+  ccRuns: CCRunSummary[];
+  ccRunsError: string | null;
+  ccGovernorLoading: boolean;
+  ccGovernorPending: CCReferral[];
+  ccGovernorCount: number;
+  ccGovernorError: string | null;
+  ccKbLoading: boolean;
+  ccKbResults: CCKbResult[];
+  ccKbQuery: string;
+  ccKbError: string | null;
+  ccArenaLoading: boolean;
+  ccArenaSessions: CCArenaSession[];
+  ccArenaError: string | null;
+  ccArenaSelectedId: string | null;
+  ccArenaMessages: CCArenaMessage[];
+  ccArenaMessagesLoading: boolean;
+  ccArenaChatInput: string;
+  ccProcessStatus: CCProcessStatus | null;
   client: GatewayBrowserClient | null;
   refreshSessionsAfterChat: Set<string>;
   connect: () => void;

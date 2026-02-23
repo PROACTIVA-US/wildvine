@@ -7,6 +7,10 @@ export const TAB_GROUPS = [
     tabs: ["overview", "channels", "instances", "sessions", "usage", "cron"],
   },
   { label: "Agent", tabs: ["agents", "skills", "nodes"] },
+  {
+    label: "CommandCentral",
+    tabs: ["cc-pipelines", "cc-governor", "cc-kb", "cc-arena"],
+  },
   { label: "Settings", tabs: ["config", "debug", "logs"] },
 ] as const;
 
@@ -23,7 +27,11 @@ export type Tab =
   | "chat"
   | "config"
   | "debug"
-  | "logs";
+  | "logs"
+  | "cc-pipelines"
+  | "cc-governor"
+  | "cc-kb"
+  | "cc-arena";
 
 const TAB_PATHS: Record<Tab, string> = {
   agents: "/agents",
@@ -39,6 +47,10 @@ const TAB_PATHS: Record<Tab, string> = {
   config: "/config",
   debug: "/debug",
   logs: "/logs",
+  "cc-pipelines": "/cc-pipelines",
+  "cc-governor": "/cc-governor",
+  "cc-kb": "/cc-kb",
+  "cc-arena": "/cc-arena",
 };
 
 const PATH_TO_TAB = new Map(Object.entries(TAB_PATHS).map(([tab, path]) => [path, tab as Tab]));
@@ -150,6 +162,14 @@ export function iconForTab(tab: Tab): IconName {
       return "bug";
     case "logs":
       return "scrollText";
+    case "cc-pipelines":
+      return "loader";
+    case "cc-governor":
+      return "fileText";
+    case "cc-kb":
+      return "zap";
+    case "cc-arena":
+      return "messageSquare";
     default:
       return "folder";
   }
@@ -183,6 +203,14 @@ export function titleForTab(tab: Tab) {
       return "Debug";
     case "logs":
       return "Logs";
+    case "cc-pipelines":
+      return "Pipelines";
+    case "cc-governor":
+      return "Governor";
+    case "cc-kb":
+      return "Knowledge Base";
+    case "cc-arena":
+      return "Arena";
     default:
       return "Control";
   }
@@ -216,6 +244,14 @@ export function subtitleForTab(tab: Tab) {
       return "Gateway snapshots, events, and manual RPC calls.";
     case "logs":
       return "Live tail of the gateway file logs.";
+    case "cc-pipelines":
+      return "Run and monitor CommandCentral pipelines.";
+    case "cc-governor":
+      return "Approve or deny pending items in the governance queue.";
+    case "cc-kb":
+      return "Search CommandCentral's knowledge base.";
+    case "cc-arena":
+      return "Multi-agent deliberation sessions.";
     default:
       return "";
   }

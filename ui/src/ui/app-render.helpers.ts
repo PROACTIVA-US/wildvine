@@ -11,8 +11,16 @@ import { ChatState, loadChatHistory } from "./controllers/chat.ts";
 import { icons } from "./icons.ts";
 import { iconForTab, pathForTab, titleForTab, type Tab } from "./navigation.ts";
 
+function tabBadge(state: AppViewState, tab: Tab): string | null {
+  if (tab === "cc-governor" && state.ccGovernorCount > 0) {
+    return String(state.ccGovernorCount);
+  }
+  return null;
+}
+
 export function renderTab(state: AppViewState, tab: Tab) {
   const href = pathForTab(tab, state.basePath);
+  const badge = tabBadge(state, tab);
   return html`
     <a
       href=${href}
@@ -34,7 +42,7 @@ export function renderTab(state: AppViewState, tab: Tab) {
       title=${titleForTab(tab)}
     >
       <span class="nav-item__icon" aria-hidden="true">${icons[iconForTab(tab)]}</span>
-      <span class="nav-item__text">${titleForTab(tab)}</span>
+      <span class="nav-item__text">${titleForTab(tab)}${badge ? html`<span class="nav-badge">${badge}</span>` : ""}</span>
     </a>
   `;
 }

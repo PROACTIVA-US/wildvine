@@ -2,6 +2,15 @@ import { LitElement } from "lit";
 import { customElement, state } from "lit/decorators.js";
 import type { EventLogEntry } from "./app-events.ts";
 import type { AppViewState } from "./app-view-state.ts";
+import type {
+  CCPipelineSummary,
+  CCRunSummary,
+  CCReferral,
+  CCKbResult,
+  CCArenaSession,
+  CCArenaMessage,
+  CCProcessStatus,
+} from "./controllers/cc-data.ts";
 import type { DevicePairingList } from "./controllers/devices.ts";
 import type { ExecApprovalRequest } from "./controllers/exec-approval.ts";
 import type { ExecApprovalsFile, ExecApprovalsSnapshot } from "./controllers/exec-approvals.ts";
@@ -323,6 +332,30 @@ export class WildvineApp extends LitElement {
   @state() logsLimit = 500;
   @state() logsMaxBytes = 250_000;
   @state() logsAtBottom = true;
+
+  // ── CommandCentral state ─────────────────────────────────
+  @state() ccPipelinesLoading = false;
+  @state() ccPipelines: CCPipelineSummary[] = [];
+  @state() ccPipelinesError: string | null = null;
+  @state() ccRunsLoading = false;
+  @state() ccRuns: CCRunSummary[] = [];
+  @state() ccRunsError: string | null = null;
+  @state() ccGovernorLoading = false;
+  @state() ccGovernorPending: CCReferral[] = [];
+  @state() ccGovernorCount = 0;
+  @state() ccGovernorError: string | null = null;
+  @state() ccKbLoading = false;
+  @state() ccKbResults: CCKbResult[] = [];
+  @state() ccKbQuery = "";
+  @state() ccKbError: string | null = null;
+  @state() ccArenaLoading = false;
+  @state() ccArenaSessions: CCArenaSession[] = [];
+  @state() ccArenaError: string | null = null;
+  @state() ccArenaSelectedId: string | null = null;
+  @state() ccArenaMessages: CCArenaMessage[] = [];
+  @state() ccArenaMessagesLoading = false;
+  @state() ccArenaChatInput = "";
+  @state() ccProcessStatus: CCProcessStatus | null = null;
 
   client: GatewayBrowserClient | null = null;
   private chatScrollFrame: number | null = null;

@@ -1,0 +1,68 @@
+{
+  "id": "cc-process-manager",
+  "name": "CC Process Manager",
+  "description": "Auto-starts and manages CommandCentral backend services",
+  "uiHints": {
+    "enabled": {
+      "label": "Enabled"
+    },
+    "ccProjectRoot": {
+      "label": "CC Project Root",
+      "help": "Path to commandcentralV.0 directory. Falls back to CC_PROJECT_ROOT env var or ../commandcentralV.0"
+    },
+    "pythonPath": {
+      "label": "Python Path",
+      "help": "Path to Python interpreter. Falls back to CC_PYTHON_PATH env var or auto-detect venv"
+    },
+    "autoStart": {
+      "label": "Auto-Start on Boot",
+      "help": "Start CC services when gateway starts (default: true)"
+    },
+    "hubBackendPort": {
+      "label": "Hub Backend Port",
+      "help": "Port for CC hub backend (default: 9011)"
+    },
+    "gatewayPort": {
+      "label": "CC Gateway Port",
+      "help": "Port for CC gateway (default: 9000)"
+    }
+  },
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "enabled": {
+        "type": "boolean"
+      },
+      "ccProjectRoot": {
+        "type": "string"
+      },
+      "pythonPath": {
+        "type": "string"
+      },
+      "autoStart": {
+        "type": "boolean"
+      },
+      "hubBackendPort": {
+        "type": "integer",
+        "minimum": 1024,
+        "maximum": 65535
+      },
+      "gatewayPort": {
+        "type": "integer",
+        "minimum": 1024,
+        "maximum": 65535
+      },
+      "healthCheckIntervalMs": {
+        "type": "integer",
+        "minimum": 5000,
+        "maximum": 300000
+      },
+      "maxRestartAttempts": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 20
+      }
+    }
+  }
+}

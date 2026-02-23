@@ -782,6 +782,20 @@ export default {
       }
     });
 
+    api.registerGatewayMethod("cc.runs.list", async ({ params, respond }) => {
+      try {
+        const runs = await ccRunsList({
+          pipeline_name:
+            typeof params.pipeline_name === "string" ? params.pipeline_name : undefined,
+          status: typeof params.status === "string" ? params.status : undefined,
+          limit: typeof params.limit === "number" ? params.limit : 20,
+        });
+        respond(true, { runs });
+      } catch (err) {
+        respond(false, { error: err instanceof Error ? err.message : "CC runs list failed" });
+      }
+    });
+
     api.registerGatewayMethod("cc.runs.get", async ({ params, respond }) => {
       const runId = typeof params.run_id === "string" ? params.run_id : "";
       if (!runId) {
@@ -856,6 +870,23 @@ export default {
         respond(true, await ccArenaSessions(projectId));
       } catch (err) {
         respond(false, { error: err instanceof Error ? err.message : "CC arena sessions failed" });
+      }
+    });
+
+    api.registerGatewayMethod("cc.arena.messages", async ({ params, respond }) => {
+      const sessionId = typeof params.session_id === "string" ? params.session_id : "";
+      if (!sessionId) {
+        respond(false, { error: "session_id is required" });
+        return;
+      }
+      try {
+        const projectId = typeof params.project_id === "string" ? params.project_id : "default";
+        const limit = typeof params.limit === "number" ? params.limit : undefined;
+        respond(true, await ccArenaMessages(sessionId, projectId, { limit }));
+      } catch (err) {
+        respond(false, {
+          error: err instanceof Error ? err.message : "CC arena messages failed",
+        });
       }
     });
 

@@ -1,0 +1,15 @@
+{
+  "name": "@wildvine/cc-process-manager",
+  "version": "2026.2.23",
+  "private": true,
+  "description": "Auto-starts CommandCentral services on gateway boot",
+  "type": "module",
+  "devDependencies": {
+    "wildvine": "workspace:*"
+  },
+  "wildvine": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}

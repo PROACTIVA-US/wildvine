@@ -191,6 +191,24 @@ export async function ccHealthCheck(): Promise<CCHealthResponse> {
   return ccFetch<CCHealthResponse>("/api/health");
 }
 
+/**
+ * Poll /api/health until CC responds with 200, or timeout.
+ * Useful when waiting for CC to start via cc-process-manager.
+ */
+export async function waitForCC(timeoutMs = 30_000): Promise<boolean> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    try {
+      await ccHealthCheck();
+      return true;
+    } catch {
+      // Not ready yet
+    }
+    await new Promise((r) => setTimeout(r, 1000));
+  }
+  return false;
+}
+
 export async function ccKbSearch(
   projectId: string,
   query: string,

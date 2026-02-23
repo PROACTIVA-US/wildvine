@@ -8,6 +8,18 @@ import { loadAgentFileContent, loadAgentFiles, saveAgentFile } from "./controlle
 import { loadAgentIdentities, loadAgentIdentity } from "./controllers/agent-identity.ts";
 import { loadAgentSkills } from "./controllers/agent-skills.ts";
 import { loadAgents } from "./controllers/agents.ts";
+import {
+  loadCcPipelines,
+  loadCcRuns,
+  triggerCcRun,
+  loadCcGovernor,
+  approveCcReferral,
+  denyCcReferral,
+  loadCcKb,
+  loadCcArenaSessions,
+  loadCcArenaMessages,
+  sendCcArenaChat,
+} from "./controllers/cc-data.ts";
 import { loadChannels } from "./controllers/channels.ts";
 import { loadChatHistory } from "./controllers/chat.ts";
 import {
@@ -50,9 +62,14 @@ import {
   updateSkillEdit,
   updateSkillEnabled,
 } from "./controllers/skills.ts";
+import "./components/voice-toggle.ts";
 import { icons } from "./icons.ts";
 import { normalizeBasePath, TAB_GROUPS, subtitleForTab, titleForTab } from "./navigation.ts";
 import { renderAgents } from "./views/agents.ts";
+import { renderCcArena } from "./views/cc-arena.ts";
+import { renderCcGovernor } from "./views/cc-governor.ts";
+import { renderCcKb } from "./views/cc-kb.ts";
+import { renderCcPipelines } from "./views/cc-pipelines.ts";
 import { renderChannels } from "./views/channels.ts";
 import { renderChat } from "./views/chat.ts";
 import { renderConfig } from "./views/config.ts";
@@ -132,6 +149,11 @@ export function renderApp(state: AppViewState) {
           </div>
         </div>
         <div class="topbar-status">
+          <voice-toggle .gatewayUrl=${state.settings.gatewayUrl}></voice-toggle>
+          <div class="pill" title="CommandCentral: ${state.ccProcessStatus?.overall ?? "unknown"}">
+            <span class="statusDot ${state.ccProcessStatus?.overall === "running" ? "ok" : state.ccProcessStatus?.overall === "partial" ? "warn" : ""}"></span>
+            <span>CC</span>
+          </div>
           <div class="pill">
             <span class="statusDot ${state.connected ? "ok" : ""}"></span>
             <span>Health</span>
@@ -210,6 +232,8 @@ export function renderApp(state: AppViewState) {
                 cronEnabled: state.cronStatus?.enabled ?? null,
                 cronNext,
                 lastChannelsRefresh: state.channelsLastSuccess,
+                ccProcessStatus: state.ccProcessStatus,
+                ccGovernorCount: state.ccGovernorCount,
                 onSettingsChange: (next) => state.applySettings(next),
                 onPasswordChange: (next) => (state.password = next),
                 onSessionKeyChange: (next) => {
@@ -225,6 +249,16 @@ export function renderApp(state: AppViewState) {
                 },
                 onConnect: () => state.connect(),
                 onRefresh: () => state.loadOverview(),
+                onCcStart: () => {
+                  if (state.client) {
+                    void state.client.request("cc.process.start", {});
+                  }
+                },
+                onCcStop: () => {
+                  if (state.client) {
+                    void state.client.request("cc.process.stop", {});
+                  }
+                },
               })
             : nothing
         }
@@ -939,6 +973,72 @@ export function renderApp(state: AppViewState) {
                 onRefresh: () => loadLogs(state, { reset: true }),
                 onExport: (lines, label) => state.exportLogs(lines, label),
                 onScroll: (event) => state.handleLogsScroll(event),
+              })
+            : nothing
+        }
+
+        ${
+          state.tab === "cc-pipelines"
+            ? renderCcPipelines({
+                loading: state.ccPipelinesLoading,
+                pipelines: state.ccPipelines,
+                error: state.ccPipelinesError,
+                runsLoading: state.ccRunsLoading,
+                runs: state.ccRuns,
+                runsError: state.ccRunsError,
+                onRefresh: () => {
+                  void loadCcPipelines(state);
+                  void loadCcRuns(state);
+                },
+                onRunPipeline: (path) => triggerCcRun(state, path, "default"),
+              })
+            : nothing
+        }
+
+        ${
+          state.tab === "cc-governor"
+            ? renderCcGovernor({
+                loading: state.ccGovernorLoading,
+                pending: state.ccGovernorPending,
+                count: state.ccGovernorCount,
+                error: state.ccGovernorError,
+                onRefresh: () => loadCcGovernor(state),
+                onApprove: (id) => approveCcReferral(state, id),
+                onDeny: (id) => denyCcReferral(state, id),
+              })
+            : nothing
+        }
+
+        ${
+          state.tab === "cc-kb"
+            ? renderCcKb({
+                loading: state.ccKbLoading,
+                results: state.ccKbResults,
+                query: state.ccKbQuery,
+                error: state.ccKbError,
+                onQueryChange: (q) => (state.ccKbQuery = q),
+                onSearch: () => loadCcKb(state),
+              })
+            : nothing
+        }
+
+        ${
+          state.tab === "cc-arena"
+            ? renderCcArena({
+                loading: state.ccArenaLoading,
+                sessions: state.ccArenaSessions,
+                error: state.ccArenaError,
+                selectedId: state.ccArenaSelectedId,
+                messages: state.ccArenaMessages,
+                messagesLoading: state.ccArenaMessagesLoading,
+                chatInput: state.ccArenaChatInput,
+                onRefresh: () => loadCcArenaSessions(state),
+                onSelectSession: (id) => {
+                  state.ccArenaSelectedId = id;
+                  void loadCcArenaMessages(state, id);
+                },
+                onChatInputChange: (v) => (state.ccArenaChatInput = v),
+                onSendChat: () => sendCcArenaChat(state),
               })
             : nothing
         }

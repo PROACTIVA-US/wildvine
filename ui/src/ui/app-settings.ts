@@ -11,6 +11,13 @@ import { scheduleChatScroll, scheduleLogsScroll } from "./app-scroll.ts";
 import { loadAgentIdentities, loadAgentIdentity } from "./controllers/agent-identity.ts";
 import { loadAgentSkills } from "./controllers/agent-skills.ts";
 import { loadAgents } from "./controllers/agents.ts";
+import {
+  loadCcPipelines,
+  loadCcRuns,
+  loadCcGovernor,
+  loadCcArenaSessions,
+  loadCcProcessStatus,
+} from "./controllers/cc-data.ts";
 import { loadChannels } from "./controllers/channels.ts";
 import { loadConfig, loadConfigSchema } from "./controllers/config.ts";
 import { loadCronJobs, loadCronStatus } from "./controllers/cron.ts";
@@ -248,6 +255,16 @@ export async function refreshActiveTab(host: SettingsHost) {
     await loadLogs(host as unknown as WildvineApp, { reset: true });
     scheduleLogsScroll(host as unknown as Parameters<typeof scheduleLogsScroll>[0], true);
   }
+  if (host.tab === "cc-pipelines") {
+    await loadCcPipelines(host as unknown as WildvineApp);
+    await loadCcRuns(host as unknown as WildvineApp);
+  }
+  if (host.tab === "cc-governor") {
+    await loadCcGovernor(host as unknown as WildvineApp);
+  }
+  if (host.tab === "cc-arena") {
+    await loadCcArenaSessions(host as unknown as WildvineApp);
+  }
 }
 
 export function inferBasePath() {
@@ -412,6 +429,8 @@ export async function loadOverview(host: SettingsHost) {
     loadSessions(host as unknown as WildvineApp),
     loadCronStatus(host as unknown as WildvineApp),
     loadDebug(host as unknown as WildvineApp),
+    loadCcProcessStatus(host as unknown as WildvineApp),
+    loadCcGovernor(host as unknown as WildvineApp),
   ]);
 }
 

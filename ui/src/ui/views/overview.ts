@@ -1,4 +1,5 @@
-import { html } from "lit";
+import { html, nothing } from "lit";
+import type { CCProcessStatus } from "../controllers/cc-data.ts";
 import type { GatewayHelloOk } from "../gateway.ts";
 import type { UiSettings } from "../storage.ts";
 import { formatRelativeTimestamp, formatDurationHuman } from "../format.ts";
@@ -15,11 +16,15 @@ export type OverviewProps = {
   cronEnabled: boolean | null;
   cronNext: number | null;
   lastChannelsRefresh: number | null;
+  ccProcessStatus: CCProcessStatus | null;
+  ccGovernorCount: number;
   onSettingsChange: (next: UiSettings) => void;
   onPasswordChange: (next: string) => void;
   onSessionKeyChange: (next: string) => void;
   onConnect: () => void;
   onRefresh: () => void;
+  onCcStart: () => void;
+  onCcStop: () => void;
 };
 
 export function renderOverview(props: OverviewProps) {
@@ -247,6 +252,56 @@ export function renderOverview(props: OverviewProps) {
           ${props.cronEnabled == null ? "n/a" : props.cronEnabled ? "Enabled" : "Disabled"}
         </div>
         <div class="muted">Next wake ${formatNextRun(props.cronNext)}</div>
+      </div>
+    </section>
+
+    <section class="card" style="margin-top: 18px;">
+      <div class="card-title">CommandCentral</div>
+      <div class="card-sub">Integrated orchestration platform status.</div>
+      <div class="stat-grid" style="margin-top: 16px;">
+        ${(() => {
+          const cc = props.ccProcessStatus;
+          if (!cc) {
+            return html`
+              <div class="stat">
+                <div class="stat-label">Status</div>
+                <div class="stat-value muted">Unknown</div>
+              </div>
+              <div class="stat">
+                <div class="stat-label">Governor</div>
+                <div class="stat-value">${props.ccGovernorCount} pending</div>
+              </div>
+            `;
+          }
+          const statusColor =
+            cc.overall === "running" ? "ok" : cc.overall === "partial" ? "warn" : "";
+          const services = Object.values(cc.services);
+          return html`
+            <div class="stat">
+              <div class="stat-label">Status</div>
+              <div class="stat-value ${statusColor}">${cc.overall}</div>
+            </div>
+            ${services.map(
+              (svc) => html`
+                <div class="stat">
+                  <div class="stat-label">${svc.id}</div>
+                  <div class="stat-value ${svc.healthy ? "ok" : ""}">
+                    ${svc.running ? `PID ${svc.pid}` : "Stopped"}
+                    ${svc.uptimeMs ? html`<span class="muted" style="font-size: 12px"> · ${formatDurationHuman(svc.uptimeMs)}</span>` : nothing}
+                  </div>
+                </div>
+              `,
+            )}
+            <div class="stat">
+              <div class="stat-label">Governor</div>
+              <div class="stat-value">${props.ccGovernorCount} pending</div>
+            </div>
+          `;
+        })()}
+      </div>
+      <div class="row" style="margin-top: 14px;">
+        <button class="btn btn--sm" @click=${() => props.onCcStart()}>Start CC</button>
+        <button class="btn btn--sm" @click=${() => props.onCcStop()}>Stop CC</button>
       </div>
     </section>
 
