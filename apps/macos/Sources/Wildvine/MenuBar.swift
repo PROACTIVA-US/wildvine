@@ -270,6 +270,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             NSApp.terminate(nil)
             return
         }
+        // Set the Dock icon from the bundled .icns (SwiftPM puts it inside
+        // the resource bundle, not at Contents/Resources/ where CFBundleIconFile looks).
+        if let icnsURL = Bundle.main.url(forResource: "Wildvine", withExtension: "icns"),
+           let icon = NSImage(contentsOf: icnsURL) {
+            NSApp.applicationIconImage = icon
+        }
         self.state = AppStateStore.shared
         // Set activation policy synchronously so macOS registers the Dock icon
         // before finishing launch. The async DockIconManager call is too late —
