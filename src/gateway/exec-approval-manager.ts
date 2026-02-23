@@ -1,5 +1,10 @@
 import { randomUUID } from "node:crypto";
 import type { ExecApprovalDecision } from "../infra/exec-approvals.js";
+import {
+  loadApprovalHistoryFromCC,
+  persistApprovalToCC,
+  type CCPersistedApproval,
+} from "./exec-approval-cc-persistence.js";
 
 // Grace period to keep resolved entries for late awaitDecision calls
 const RESOLVED_ENTRY_GRACE_MS = 15_000;
@@ -39,6 +44,31 @@ type PendingEntry = {
 
 export class ExecApprovalManager {
   private pending = new Map<string, PendingEntry>();
+  private logger?: { debug: (msg: string, meta?: Record<string, unknown>) => void };
+  private ccHistory: CCPersistedApproval[] = [];
+
+  /**
+   * Load recent approval history from CC governor (best-effort).
+   * Call once during gateway startup for audit recovery context.
+   */
+  async loadFromCC(): Promise<void> {
+    try {
+      this.ccHistory = await loadApprovalHistoryFromCC();
+      this.logger?.debug("CC approval history loaded", { count: this.ccHistory.length });
+    } catch {
+      this.logger?.debug("CC approval history load skipped (CC unreachable)");
+    }
+  }
+
+  /** Returns the CC governor history loaded on startup. */
+  getCCHistory(): CCPersistedApproval[] {
+    return this.ccHistory;
+  }
+
+  /** Attach an optional logger for debug output. */
+  setLogger(logger: { debug: (msg: string, meta?: Record<string, unknown>) => void }): void {
+    this.logger = logger;
+  }
 
   create(
     request: ExecApprovalRequestPayload,
@@ -129,6 +159,19 @@ export class ExecApprovalManager {
     // Resolve the promise first, then delete after a grace period.
     // This allows in-flight awaitDecision calls to find the resolved entry.
     pending.resolve(decision);
+
+    // Fire-and-forget CC persistence — never blocks or delays the real-time UX
+    persistApprovalToCC({
+      approvalId: recordId,
+      command: pending.record.request.command,
+      decision,
+      agentId: pending.record.request.agentId,
+      sessionKey: pending.record.request.sessionKey,
+      resolvedBy: resolvedBy ?? null,
+    }).catch(() => {
+      // Silently ignore — CC persistence is best-effort
+    });
+
     setTimeout(() => {
       // Only delete if the entry hasn't been replaced
       if (this.pending.get(recordId) === pending) {

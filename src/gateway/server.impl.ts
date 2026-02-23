@@ -537,6 +537,9 @@ export async function startGatewayServer(
   }
 
   const execApprovalManager = new ExecApprovalManager();
+  execApprovalManager.setLogger(log);
+  // Best-effort: load CC governor history for audit context (non-blocking)
+  void execApprovalManager.loadFromCC().catch(() => {});
   const execApprovalForwarder = createExecApprovalForwarder();
   const execApprovalHandlers = createExecApprovalHandlers(execApprovalManager, {
     forwarder: execApprovalForwarder,
