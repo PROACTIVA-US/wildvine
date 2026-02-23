@@ -5,6 +5,7 @@ import type {
   SkillEntry,
   SkillInstallSpec,
   SkillInvocationPolicy,
+  SkillPriority,
 } from "./types.js";
 import { parseFrontmatterBlock } from "../../markdown/frontmatter.js";
 import {
@@ -92,8 +93,17 @@ export function resolveWildvineMetadata(
     .map((entry) => parseInstallSpec(entry))
     .filter((entry): entry is SkillInstallSpec => Boolean(entry));
   const osRaw = normalizeStringList(metadataObj.os);
+  const priorityRaw =
+    typeof metadataObj.priority === "string"
+      ? metadataObj.priority.toUpperCase().trim()
+      : undefined;
+  const priority: SkillPriority | undefined =
+    priorityRaw === "P0" || priorityRaw === "P1" || priorityRaw === "P2" ? priorityRaw : undefined;
+  const isAlways =
+    (typeof metadataObj.always === "boolean" ? metadataObj.always : false) || priority === "P0";
   return {
-    always: typeof metadataObj.always === "boolean" ? metadataObj.always : undefined,
+    always: isAlways || undefined,
+    priority,
     emoji: typeof metadataObj.emoji === "string" ? metadataObj.emoji : undefined,
     homepage: typeof metadataObj.homepage === "string" ? metadataObj.homepage : undefined,
     skillKey: typeof metadataObj.skillKey === "string" ? metadataObj.skillKey : undefined,

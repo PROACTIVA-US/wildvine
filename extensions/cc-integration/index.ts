@@ -5,12 +5,12 @@
  *
  * Agent tools: cc_kb_search, cc_pipeline_run, cc_pipeline_list, cc_run_status,
  *   cc_governor_list, cc_governor_decide, cc_arena_chat, cc_inbox_list, cc_inbox_ack,
- *   cc_vislzr_canvases, cc_skill_search
+ *   cc_vislzr_canvases, cc_skill_search, cc_skills_ingest
  * Gateway RPCs: cc.health, cc.kb.search, cc.pipelines.list, cc.runs.create,
  *   cc.runs.get, cc.governor.pending, cc.governor.approve, cc.governor.deny,
  *   cc.arena.sessions, cc.arena.chat, cc.inbox.list, cc.inbox.ack,
  *   cc.vislzr.canvases, cc.vislzr.canvas, cc.skills.list, cc.skills.get,
- *   cc.skills.resolve
+ *   cc.skills.resolve, cc.skills.ingest
  * Hook: before_agent_start (notifies agents that CC tools are available)
  */
 
@@ -47,6 +47,7 @@ import {
   ccSkillsList,
   ccSkillGet,
   ccSkillsResolve,
+  ccSkillsIngest,
   // Notes
   ccNotesCapture,
   ccNotesList,
@@ -724,6 +725,58 @@ export default {
       { optional: true },
     );
 
+    // ── Agent Tool: cc_skills_ingest ─────────────────────────
+
+    api.registerTool(
+      {
+        name: "cc_skills_ingest",
+        label: "CC Skill Ingest",
+        description:
+          "Submit a Wildvine skill to CommandCentral's evaluation pipeline. " +
+          "The skill goes through a 3-stage process: discover → evaluate → ingest. " +
+          "Skills that pass evaluation are added to CC's skill library; those that fail " +
+          "are referred to the governor queue for human review.",
+        parameters: Type.Object({
+          name: Type.String({ description: "Skill name" }),
+          content: Type.String({ description: "Full skill content (SKILL.md body)" }),
+          source: Type.Optional(
+            Type.String({ description: 'Source identifier (default: "wildvine")' }),
+          ),
+          priority: Type.Optional(
+            Type.String({ description: 'Suggested priority: "P0", "P1", or "P2"' }),
+          ),
+          keywords: Type.Optional(
+            Type.Array(Type.String(), { description: "Keywords for task matching" }),
+          ),
+        }),
+        async execute(_id: string, params: Record<string, unknown>) {
+          const name = String(params.name || "").trim();
+          const content = String(params.content || "").trim();
+          if (!name || !content) {
+            return textResult("Error: name and content are required.");
+          }
+          try {
+            const result = await ccSkillsIngest({
+              name,
+              content,
+              source: typeof params.source === "string" ? params.source : undefined,
+              priority: typeof params.priority === "string" ? params.priority : undefined,
+              keywords: Array.isArray(params.keywords) ? (params.keywords as string[]) : undefined,
+            });
+            return textResult(
+              `Skill "${name}" submitted for evaluation.\n` +
+                `Pipeline run ID: ${result.run_id}\n` +
+                "Use cc_run_status to check evaluation progress.",
+              result,
+            );
+          } catch (err) {
+            return textResult(ccErrorText(err, "CC skill ingest"));
+          }
+        },
+      },
+      { optional: true },
+    );
+
     // ── Gateway RPCs ──────────────────────────────────────────
 
     api.registerGatewayMethod("cc.health", async ({ respond }) => {
@@ -1009,6 +1062,29 @@ export default {
       }
     });
 
+    api.registerGatewayMethod("cc.skills.ingest", async ({ params, respond }) => {
+      const name = typeof params.name === "string" ? params.name.trim() : "";
+      const content = typeof params.content === "string" ? params.content.trim() : "";
+      if (!name || !content) {
+        respond(false, { error: "name and content are required" });
+        return;
+      }
+      try {
+        const result = await ccSkillsIngest({
+          name,
+          content,
+          source: typeof params.source === "string" ? params.source : undefined,
+          priority: typeof params.priority === "string" ? params.priority : undefined,
+          keywords: Array.isArray(params.keywords) ? (params.keywords as string[]) : undefined,
+        });
+        respond(true, result);
+      } catch (err) {
+        respond(false, {
+          error: err instanceof Error ? err.message : "CC skill ingest failed",
+        });
+      }
+    });
+
     // ── Notes RPCs ───────────────────────────────────────────
 
     api.registerGatewayMethod("notes.capture", async ({ params, respond }) => {
@@ -1145,6 +1221,7 @@ export default {
           "- cc_inbox_list / cc_inbox_ack: Read and acknowledge inbox notifications\n" +
           "- cc_vislzr_canvases: Browse visual canvases (mindmaps, dashboards)\n" +
           "- cc_skill_search: Search CC's skill library (operations, safety, execution patterns)\n" +
+          "- cc_skills_ingest: Submit skills to CC's evaluation pipeline\n" +
           "- notes_capture: Capture a note/thought/idea for the user's living notes system",
       };
     });
