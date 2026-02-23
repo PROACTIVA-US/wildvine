@@ -2,6 +2,7 @@ import type { IconName } from "./icons.js";
 
 export const TAB_GROUPS = [
   { label: "Chat", tabs: ["chat"] },
+  { label: "Notes", tabs: ["notes"] },
   {
     label: "Control",
     tabs: ["overview", "channels", "instances", "sessions", "usage", "cron"],
@@ -25,6 +26,7 @@ export type Tab =
   | "skills"
   | "nodes"
   | "chat"
+  | "notes"
   | "config"
   | "debug"
   | "logs"
@@ -44,6 +46,7 @@ const TAB_PATHS: Record<Tab, string> = {
   skills: "/skills",
   nodes: "/nodes",
   chat: "/chat",
+  notes: "/notes",
   config: "/config",
   debug: "/debug",
   logs: "/logs",
@@ -156,6 +159,8 @@ export function iconForTab(tab: Tab): IconName {
       return "zap";
     case "nodes":
       return "monitor";
+    case "notes":
+      return "edit";
     case "config":
       return "settings";
     case "debug":
@@ -197,6 +202,8 @@ export function titleForTab(tab: Tab) {
       return "Nodes";
     case "chat":
       return "Chat";
+    case "notes":
+      return "Notes";
     case "config":
       return "Config";
     case "debug":
@@ -238,6 +245,8 @@ export function subtitleForTab(tab: Tab) {
       return "Paired devices, capabilities, and command exposure.";
     case "chat":
       return "Direct gateway chat session for quick interventions.";
+    case "notes":
+      return "Capture ideas, tasks, and context. Surfaced when relevant.";
     case "config":
       return "Edit ~/.wildvine/wildvine.json safely.";
     case "debug":

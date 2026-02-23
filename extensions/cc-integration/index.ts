@@ -47,6 +47,12 @@ import {
   ccSkillsList,
   ccSkillGet,
   ccSkillsResolve,
+  // Notes
+  ccNotesCapture,
+  ccNotesList,
+  ccNotesDismiss,
+  ccNotesComplete,
+  ccNotesSearch,
 } from "./cc-client.js";
 
 // Cache CC reachability for 30 seconds to avoid spamming health checks
@@ -1003,6 +1009,126 @@ export default {
       }
     });
 
+    // ── Notes RPCs ───────────────────────────────────────────
+
+    api.registerGatewayMethod("notes.capture", async ({ params, respond }) => {
+      const subject = typeof params.subject === "string" ? params.subject.trim() : "";
+      if (!subject) {
+        respond(false, { error: "subject is required" });
+        return;
+      }
+      try {
+        const item = await ccNotesCapture({
+          subject,
+          body: typeof params.body === "string" ? params.body : undefined,
+          priority:
+            typeof params.priority === "string" &&
+            ["RED", "YELLOW", "GREEN"].includes(params.priority)
+              ? (params.priority as "RED" | "YELLOW" | "GREEN")
+              : undefined,
+        });
+        respond(true, item);
+      } catch (err) {
+        respond(false, { error: err instanceof Error ? err.message : "Notes capture failed" });
+      }
+    });
+
+    api.registerGatewayMethod("notes.list", async ({ params, respond }) => {
+      try {
+        const res = await ccNotesList({
+          status: typeof params.status === "string" ? params.status : undefined,
+          priority: typeof params.priority === "string" ? params.priority : undefined,
+          limit: typeof params.limit === "number" ? params.limit : undefined,
+        });
+        respond(true, res);
+      } catch (err) {
+        respond(false, { error: err instanceof Error ? err.message : "Notes list failed" });
+      }
+    });
+
+    api.registerGatewayMethod("notes.dismiss", async ({ params, respond }) => {
+      const id = typeof params.id === "string" ? params.id.trim() : "";
+      if (!id) {
+        respond(false, { error: "id is required" });
+        return;
+      }
+      try {
+        // Respect inbox state machine: pending → working → completed
+        await ccNotesDismiss(id);
+        const item = await ccNotesComplete(id);
+        respond(true, item);
+      } catch (err) {
+        respond(false, { error: err instanceof Error ? err.message : "Notes dismiss failed" });
+      }
+    });
+
+    api.registerGatewayMethod("notes.search", async ({ params, respond }) => {
+      const query = typeof params.query === "string" ? params.query.trim() : "";
+      if (!query) {
+        respond(false, { error: "query is required" });
+        return;
+      }
+      try {
+        const res = await ccNotesSearch(
+          query,
+          typeof params.limit === "number" ? params.limit : undefined,
+        );
+        respond(true, res);
+      } catch (err) {
+        respond(false, { error: err instanceof Error ? err.message : "Notes search failed" });
+      }
+    });
+
+    // ── Agent Tool: notes_capture ─────────────────────────────
+
+    api.registerTool(
+      {
+        name: "notes_capture",
+        label: "Capture Note",
+        description:
+          "Capture a note, thought, or idea on behalf of the user. Use this when the user " +
+          "dictates an idea, mentions something to remember, or asks you to note something down. " +
+          "Notes are stored in the living notes system and surfaced contextually.",
+        parameters: Type.Object({
+          subject: Type.String({ description: "The note title or main thought" }),
+          body: Type.Optional(
+            Type.String({ description: "Additional detail or context for the note" }),
+          ),
+          priority: Type.Optional(
+            Type.Union([Type.Literal("RED"), Type.Literal("YELLOW"), Type.Literal("GREEN")], {
+              description:
+                'Priority: "RED" (urgent), "YELLOW" (important), "GREEN" (normal, default)',
+            }),
+          ),
+        }),
+
+        async execute(_id: string, params: Record<string, unknown>) {
+          const subject = String(params.subject || "").trim();
+          if (!subject) {
+            return textResult("Error: subject is required.");
+          }
+          try {
+            const item = await ccNotesCapture({
+              subject,
+              body: typeof params.body === "string" ? params.body : undefined,
+              priority:
+                typeof params.priority === "string" &&
+                ["RED", "YELLOW", "GREEN"].includes(params.priority)
+                  ? (params.priority as "RED" | "YELLOW" | "GREEN")
+                  : undefined,
+            });
+            return textResult(
+              `Note captured: **${item.subject}** (${item.priority}, id: ${item.id})`,
+              item,
+            );
+          } catch (err) {
+            return textResult(ccErrorText(err, "Notes capture"));
+          }
+        },
+      },
+      { optional: true },
+    );
+
     // ── Hook: before_agent_start ──────────────────────────────
 
     api.on("before_agent_start", async () => {
@@ -1018,7 +1144,8 @@ export default {
           "- cc_arena_chat: Multi-agent deliberation sessions\n" +
           "- cc_inbox_list / cc_inbox_ack: Read and acknowledge inbox notifications\n" +
           "- cc_vislzr_canvases: Browse visual canvases (mindmaps, dashboards)\n" +
-          "- cc_skill_search: Search CC's skill library (operations, safety, execution patterns)",
+          "- cc_skill_search: Search CC's skill library (operations, safety, execution patterns)\n" +
+          "- notes_capture: Capture a note/thought/idea for the user's living notes system",
       };
     });
 

@@ -12,6 +12,7 @@ import type {
 import type { DevicePairingList } from "./controllers/devices.ts";
 import type { ExecApprovalRequest } from "./controllers/exec-approval.ts";
 import type { ExecApprovalsFile, ExecApprovalsSnapshot } from "./controllers/exec-approvals.ts";
+import type { CCInboxItem, CCKbSearchResult } from "./controllers/notes.ts";
 import type { SkillMessage } from "./controllers/skills.ts";
 import type { GatewayBrowserClient, GatewayHelloOk } from "./gateway.ts";
 import type { Tab } from "./navigation.ts";
@@ -251,6 +252,18 @@ export type AppViewState = {
   ccArenaMessagesLoading: boolean;
   ccArenaChatInput: string;
   ccProcessStatus: CCProcessStatus | null;
+  // ── Notes state ────────────────────────────────────────
+  notesLoading: boolean;
+  notesItems: CCInboxItem[];
+  notesError: string | null;
+  notesCaptureDraft: string;
+  notesCapturePriority: "RED" | "YELLOW" | "GREEN";
+  notesCaptureBusy: boolean;
+  notesCaptureError: string | null;
+  notesSearchQuery: string;
+  notesSearchResults: CCKbSearchResult[];
+  notesSearchLoading: boolean;
+  notesFilter: "active" | "dismissed" | "all";
   client: GatewayBrowserClient | null;
   refreshSessionsAfterChat: Set<string>;
   connect: () => void;

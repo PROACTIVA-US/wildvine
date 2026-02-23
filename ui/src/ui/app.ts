@@ -14,6 +14,7 @@ import type {
 import type { DevicePairingList } from "./controllers/devices.ts";
 import type { ExecApprovalRequest } from "./controllers/exec-approval.ts";
 import type { ExecApprovalsFile, ExecApprovalsSnapshot } from "./controllers/exec-approvals.ts";
+import type { CCInboxItem, CCKbSearchResult } from "./controllers/notes.ts";
 import type { SkillMessage } from "./controllers/skills.ts";
 import type { GatewayBrowserClient, GatewayHelloOk } from "./gateway.ts";
 import type { Tab } from "./navigation.ts";
@@ -356,6 +357,19 @@ export class WildvineApp extends LitElement {
   @state() ccArenaMessagesLoading = false;
   @state() ccArenaChatInput = "";
   @state() ccProcessStatus: CCProcessStatus | null = null;
+
+  // ── Notes state ────────────────────────────────────────
+  @state() notesLoading = false;
+  @state() notesItems: CCInboxItem[] = [];
+  @state() notesError: string | null = null;
+  @state() notesCaptureDraft = "";
+  @state() notesCapturePriority: "RED" | "YELLOW" | "GREEN" = "GREEN";
+  @state() notesCaptureBusy = false;
+  @state() notesCaptureError: string | null = null;
+  @state() notesSearchQuery = "";
+  @state() notesSearchResults: CCKbSearchResult[] = [];
+  @state() notesSearchLoading = false;
+  @state() notesFilter: "active" | "dismissed" | "all" = "active";
 
   client: GatewayBrowserClient | null = null;
   private chatScrollFrame: number | null = null;

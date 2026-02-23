@@ -26,6 +26,7 @@ import { loadDevices } from "./controllers/devices.ts";
 import { loadExecApprovals } from "./controllers/exec-approvals.ts";
 import { loadLogs } from "./controllers/logs.ts";
 import { loadNodes } from "./controllers/nodes.ts";
+import { loadNotes, searchNotes } from "./controllers/notes.ts";
 import { loadPresence } from "./controllers/presence.ts";
 import { loadSessions } from "./controllers/sessions.ts";
 import { loadSkills } from "./controllers/skills.ts";
@@ -255,15 +256,28 @@ export async function refreshActiveTab(host: SettingsHost) {
     await loadLogs(host as unknown as WildvineApp, { reset: true });
     scheduleLogsScroll(host as unknown as Parameters<typeof scheduleLogsScroll>[0], true);
   }
+  if (host.tab === "notes") {
+    await loadNotes(host as unknown as WildvineApp);
+  }
   if (host.tab === "cc-pipelines") {
     await loadCcPipelines(host as unknown as WildvineApp);
     await loadCcRuns(host as unknown as WildvineApp);
+    // Load context notes for pipelines view
+    const pipelineHost = host as unknown as WildvineApp;
+    pipelineHost.notesSearchQuery = "pipelines deployment build";
+    void searchNotes(pipelineHost);
   }
   if (host.tab === "cc-governor") {
     await loadCcGovernor(host as unknown as WildvineApp);
+    const govHost = host as unknown as WildvineApp;
+    govHost.notesSearchQuery = "governance approval decision";
+    void searchNotes(govHost);
   }
   if (host.tab === "cc-arena") {
     await loadCcArenaSessions(host as unknown as WildvineApp);
+    const arenaHost = host as unknown as WildvineApp;
+    arenaHost.notesSearchQuery = "deliberation agent discussion";
+    void searchNotes(arenaHost);
   }
 }
 

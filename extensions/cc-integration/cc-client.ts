@@ -488,3 +488,75 @@ export async function ccSkillsResolve(taskDescription: string): Promise<CCSkillR
     body: JSON.stringify({ task_description: taskDescription }),
   });
 }
+
+// ── Notes (via Agent Inbox) ───────────────────────────────
+
+export interface CCInboxItem {
+  id: string;
+  agent_id: string;
+  source: string;
+  created_at: string;
+  updated_at: string;
+  priority: "RED" | "YELLOW" | "GREEN";
+  status: "pending" | "working" | "input-required" | "suspended" | "completed" | "failed";
+  subject: string;
+  body: string;
+  attachments: string[];
+  deliberation: Record<string, unknown>;
+  escalation: Record<string, unknown> | null;
+  execution_log: { timestamp: string; entry: string }[];
+  resolved_at: string | null;
+  resolved_by: string | null;
+}
+
+export interface CCInboxListResponse {
+  items: CCInboxItem[];
+  count: number;
+}
+
+export async function ccNotesCapture(opts: {
+  subject: string;
+  body?: string;
+  priority?: "RED" | "YELLOW" | "GREEN";
+}): Promise<CCInboxItem> {
+  return ccFetch<CCInboxItem>("/api/agent-inbox/items", {
+    method: "POST",
+    body: JSON.stringify({
+      agent_id: "notes",
+      source: "living-note",
+      subject: opts.subject,
+      body: opts.body ?? "",
+      priority: opts.priority ?? "GREEN",
+    }),
+  });
+}
+
+export async function ccNotesList(opts?: {
+  status?: string;
+  priority?: string;
+  limit?: number;
+}): Promise<CCInboxListResponse> {
+  const params = new URLSearchParams({ agent_id: "notes" });
+  if (opts?.status) params.set("status", opts.status);
+  if (opts?.priority) params.set("priority", opts.priority);
+  if (opts?.limit) params.set("limit", String(opts.limit));
+  return ccFetch<CCInboxListResponse>(`/api/agent-inbox/items?${params}`);
+}
+
+export async function ccNotesDismiss(itemId: string): Promise<CCInboxItem> {
+  return ccFetch<CCInboxItem>(`/api/agent-inbox/items/${encodeURIComponent(itemId)}`, {
+    method: "PATCH",
+    body: JSON.stringify({ status: "working" }),
+  });
+}
+
+export async function ccNotesComplete(itemId: string): Promise<CCInboxItem> {
+  return ccFetch<CCInboxItem>(`/api/agent-inbox/items/${encodeURIComponent(itemId)}`, {
+    method: "PATCH",
+    body: JSON.stringify({ status: "completed" }),
+  });
+}
+
+export async function ccNotesSearch(query: string, limit?: number): Promise<CCSearchResponse> {
+  return ccKbSearchMulti(["veria:inbox:notes"], query, { limit: limit ?? 20 });
+}

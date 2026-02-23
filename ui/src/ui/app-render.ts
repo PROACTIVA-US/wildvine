@@ -53,6 +53,7 @@ import {
 } from "./controllers/exec-approvals.ts";
 import { loadLogs } from "./controllers/logs.ts";
 import { loadNodes } from "./controllers/nodes.ts";
+import { loadNotes, captureNote, dismissNote, searchNotes } from "./controllers/notes.ts";
 import { loadPresence } from "./controllers/presence.ts";
 import { deleteSession, loadSessions, patchSession } from "./controllers/sessions.ts";
 import {
@@ -80,6 +81,8 @@ import { renderGatewayUrlConfirmation } from "./views/gateway-url-confirmation.t
 import { renderInstances } from "./views/instances.ts";
 import { renderLogs } from "./views/logs.ts";
 import { renderNodes } from "./views/nodes.ts";
+import { renderNotesContext } from "./views/notes-context.ts";
+import { renderNotes } from "./views/notes.ts";
 import { renderOverview } from "./views/overview.ts";
 import { renderSessions } from "./views/sessions.ts";
 import { renderSkills } from "./views/skills.ts";
@@ -150,6 +153,23 @@ export function renderApp(state: AppViewState) {
         </div>
         <div class="topbar-status">
           <voice-toggle .gatewayUrl=${state.settings.gatewayUrl}></voice-toggle>
+          <input
+            class="input"
+            style="width: 180px; height: 28px; font-size: 12px"
+            type="text"
+            placeholder="Quick note..."
+            @keydown=${(e: KeyboardEvent) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                const input = e.target as HTMLInputElement;
+                const value = input.value.trim();
+                if (value && state.client && state.connected) {
+                  input.value = "";
+                  void state.client.request("notes.capture", { subject: value });
+                }
+              }
+            }}
+          />
           <div class="pill" title="CommandCentral: ${state.ccProcessStatus?.overall ?? "unknown"}">
             <span class="statusDot ${state.ccProcessStatus?.overall === "running" ? "ok" : state.ccProcessStatus?.overall === "partial" ? "warn" : ""}"></span>
             <span>CC</span>
@@ -736,6 +756,35 @@ export function renderApp(state: AppViewState) {
         }
 
         ${
+          state.tab === "notes"
+            ? renderNotes({
+                loading: state.notesLoading,
+                items: state.notesItems,
+                error: state.notesError,
+                captureDraft: state.notesCaptureDraft,
+                capturePriority: state.notesCapturePriority,
+                captureBusy: state.notesCaptureBusy,
+                captureError: state.notesCaptureError,
+                searchQuery: state.notesSearchQuery,
+                searchResults: state.notesSearchResults,
+                searchLoading: state.notesSearchLoading,
+                filter: state.notesFilter,
+                onCaptureDraftChange: (v) => (state.notesCaptureDraft = v),
+                onCapturePriorityChange: (v) => (state.notesCapturePriority = v),
+                onCapture: () => captureNote(state as Parameters<typeof captureNote>[0]),
+                onSearchQueryChange: (v) => (state.notesSearchQuery = v),
+                onSearch: () => searchNotes(state as Parameters<typeof searchNotes>[0]),
+                onFilterChange: (v) => {
+                  state.notesFilter = v;
+                  void loadNotes(state as Parameters<typeof loadNotes>[0]);
+                },
+                onDismiss: (id) => dismissNote(state as Parameters<typeof dismissNote>[0], id),
+                onRefresh: () => loadNotes(state as Parameters<typeof loadNotes>[0]),
+              })
+            : nothing
+        }
+
+        ${
           state.tab === "nodes"
             ? renderNodes({
                 loading: state.nodesLoading,
@@ -979,7 +1028,9 @@ export function renderApp(state: AppViewState) {
 
         ${
           state.tab === "cc-pipelines"
-            ? renderCcPipelines({
+            ? html`
+              ${renderNotesContext({ results: state.notesSearchResults, loading: state.notesSearchLoading })}
+              ${renderCcPipelines({
                 loading: state.ccPipelinesLoading,
                 pipelines: state.ccPipelines,
                 error: state.ccPipelinesError,
@@ -991,13 +1042,16 @@ export function renderApp(state: AppViewState) {
                   void loadCcRuns(state);
                 },
                 onRunPipeline: (path) => triggerCcRun(state, path, "default"),
-              })
+              })}
+            `
             : nothing
         }
 
         ${
           state.tab === "cc-governor"
-            ? renderCcGovernor({
+            ? html`
+              ${renderNotesContext({ results: state.notesSearchResults, loading: state.notesSearchLoading })}
+              ${renderCcGovernor({
                 loading: state.ccGovernorLoading,
                 pending: state.ccGovernorPending,
                 count: state.ccGovernorCount,
@@ -1005,7 +1059,8 @@ export function renderApp(state: AppViewState) {
                 onRefresh: () => loadCcGovernor(state),
                 onApprove: (id) => approveCcReferral(state, id),
                 onDeny: (id) => denyCcReferral(state, id),
-              })
+              })}
+            `
             : nothing
         }
 
@@ -1024,7 +1079,9 @@ export function renderApp(state: AppViewState) {
 
         ${
           state.tab === "cc-arena"
-            ? renderCcArena({
+            ? html`
+              ${renderNotesContext({ results: state.notesSearchResults, loading: state.notesSearchLoading })}
+              ${renderCcArena({
                 loading: state.ccArenaLoading,
                 sessions: state.ccArenaSessions,
                 error: state.ccArenaError,
@@ -1039,7 +1096,8 @@ export function renderApp(state: AppViewState) {
                 },
                 onChatInputChange: (v) => (state.ccArenaChatInput = v),
                 onSendChat: () => sendCcArenaChat(state),
-              })
+              })}
+            `
             : nothing
         }
       </main>
