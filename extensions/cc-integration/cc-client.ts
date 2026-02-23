@@ -433,3 +433,40 @@ export async function ccVislzrStats(projectId: string): Promise<{
   const params = new URLSearchParams({ project_id: projectId });
   return ccFetch(`/api/vislzr/stats?${params}`);
 }
+
+// ── Skills ────────────────────────────────────────────────
+
+export interface CCSkillSummary {
+  name: string;
+  description: string;
+  priority: string;
+  keywords: string[];
+}
+
+export interface CCSkillFull extends CCSkillSummary {
+  path: string;
+  content: string;
+}
+
+export interface CCSkillResolution {
+  task_description: string;
+  resolved_skills: { name: string; priority: string; path: string }[];
+  p0_count: number;
+  p1_count: number;
+  p2_count: number;
+}
+
+export async function ccSkillsList(): Promise<{ skills: CCSkillSummary[] }> {
+  return ccFetch("/api/skills/list");
+}
+
+export async function ccSkillGet(skillName: string): Promise<CCSkillFull> {
+  return ccFetch(`/api/skills/${encodeURIComponent(skillName)}`);
+}
+
+export async function ccSkillsResolve(taskDescription: string): Promise<CCSkillResolution> {
+  return ccFetch("/api/skills/resolve", {
+    method: "POST",
+    body: JSON.stringify({ task_description: taskDescription }),
+  });
+}

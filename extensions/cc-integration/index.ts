@@ -5,11 +5,12 @@
  *
  * Agent tools: cc_kb_search, cc_pipeline_run, cc_pipeline_list, cc_run_status,
  *   cc_governor_list, cc_governor_decide, cc_arena_chat, cc_inbox_list, cc_inbox_ack,
- *   cc_vislzr_canvases
+ *   cc_vislzr_canvases, cc_skill_search
  * Gateway RPCs: cc.health, cc.kb.search, cc.pipelines.list, cc.runs.create,
  *   cc.runs.get, cc.governor.pending, cc.governor.approve, cc.governor.deny,
  *   cc.arena.sessions, cc.arena.chat, cc.inbox.list, cc.inbox.ack,
- *   cc.vislzr.canvases, cc.vislzr.canvas
+ *   cc.vislzr.canvases, cc.vislzr.canvas, cc.skills.list, cc.skills.get,
+ *   cc.skills.resolve
  * Hook: before_agent_start (notifies agents that CC tools are available)
  */
 
@@ -42,6 +43,10 @@ import {
   ccVislzrCanvases,
   ccVislzrCanvasGet,
   ccVislzrStats,
+  // Skills
+  ccSkillsList,
+  ccSkillGet,
+  ccSkillsResolve,
 } from "./cc-client.js";
 
 // Cache CC reachability for 30 seconds to avoid spamming health checks
@@ -631,6 +636,88 @@ export default {
       { optional: true },
     );
 
+    // ── Agent Tool: cc_skill_search ──────────────────────────
+
+    api.registerTool(
+      {
+        name: "cc_skill_search",
+        label: "CC Skills",
+        description:
+          "Search CommandCentral's skill library. Skills contain institutional knowledge — " +
+          "operations procedures, safety rules, execution methodology, orchestration patterns, " +
+          "and lessons learned. Use 'resolve' mode to find skills matching a task description, " +
+          "or 'get' mode to read a specific skill's full content.",
+        parameters: Type.Object({
+          mode: Type.Union([Type.Literal("list"), Type.Literal("resolve"), Type.Literal("get")], {
+            description:
+              '"list" shows all skills, "resolve" finds skills matching a task description, ' +
+              '"get" reads a specific skill\'s content',
+          }),
+          query: Type.Optional(
+            Type.String({
+              description:
+                'For "resolve": task description to match against. For "get": skill name.',
+            }),
+          ),
+        }),
+
+        async execute(_id: string, params: Record<string, unknown>) {
+          const mode = String(params.mode || "list");
+
+          try {
+            if (mode === "list") {
+              const result = await ccSkillsList();
+              if (result.skills.length === 0) return textResult("No skills found in CC.");
+
+              const lines = result.skills.map(
+                (s, i) =>
+                  `${i + 1}. **${s.name}** [${s.priority}]\n   ${s.description}\n   Keywords: ${s.keywords.join(", ")}`,
+              );
+              return textResult(
+                `${result.skills.length} skill(s) available:\n\n${lines.join("\n\n")}`,
+                result,
+              );
+            }
+
+            if (mode === "resolve") {
+              const query = String(params.query || "").trim();
+              if (!query) return textResult("Error: query is required for resolve mode.");
+
+              const result = await ccSkillsResolve(query);
+              if (result.resolved_skills.length === 0) {
+                return textResult(`No skills match "${query}".`);
+              }
+
+              const lines = result.resolved_skills.map((s) => `- **${s.name}** [${s.priority}]`);
+              return textResult(
+                `Resolved ${result.resolved_skills.length} skill(s) for "${query}":\n${lines.join("\n")}\n\n` +
+                  `P0: ${result.p0_count}, P1: ${result.p1_count}, P2: ${result.p2_count}\n` +
+                  "Use cc_skill_search with mode='get' to read full skill content.",
+                result,
+              );
+            }
+
+            if (mode === "get") {
+              const skillName = String(params.query || "").trim();
+              if (!skillName)
+                return textResult("Error: query (skill name) is required for get mode.");
+
+              const skill = await ccSkillGet(skillName);
+              return textResult(
+                `**${skill.name}** [${skill.priority}]\n${skill.description}\n\n---\n\n${skill.content}`,
+                { name: skill.name, priority: skill.priority, keywords: skill.keywords },
+              );
+            }
+
+            return textResult('Error: mode must be "list", "resolve", or "get".');
+          } catch (err) {
+            return textResult(ccErrorText(err, "CC skill search"));
+          }
+        },
+      },
+      { optional: true },
+    );
+
     // ── Gateway RPCs ──────────────────────────────────────────
 
     api.registerGatewayMethod("cc.health", async ({ respond }) => {
@@ -848,6 +935,43 @@ export default {
       }
     });
 
+    // ── Skills RPCs ─────────────────────────────────────────
+
+    api.registerGatewayMethod("cc.skills.list", async ({ respond }) => {
+      try {
+        respond(true, await ccSkillsList());
+      } catch (err) {
+        respond(false, { error: err instanceof Error ? err.message : "CC skills list failed" });
+      }
+    });
+
+    api.registerGatewayMethod("cc.skills.get", async ({ params, respond }) => {
+      const name = typeof params.name === "string" ? params.name : "";
+      if (!name) {
+        respond(false, { error: "name is required" });
+        return;
+      }
+      try {
+        respond(true, await ccSkillGet(name));
+      } catch (err) {
+        respond(false, { error: err instanceof Error ? err.message : "CC skill get failed" });
+      }
+    });
+
+    api.registerGatewayMethod("cc.skills.resolve", async ({ params, respond }) => {
+      const taskDescription =
+        typeof params.task_description === "string" ? params.task_description : "";
+      if (!taskDescription) {
+        respond(false, { error: "task_description is required" });
+        return;
+      }
+      try {
+        respond(true, await ccSkillsResolve(taskDescription));
+      } catch (err) {
+        respond(false, { error: err instanceof Error ? err.message : "CC skills resolve failed" });
+      }
+    });
+
     // ── Hook: before_agent_start ──────────────────────────────
 
     api.on("before_agent_start", async () => {
@@ -862,7 +986,8 @@ export default {
           "- cc_governor_list / cc_governor_decide: Review and approve/deny governor queue items\n" +
           "- cc_arena_chat: Multi-agent deliberation sessions\n" +
           "- cc_inbox_list / cc_inbox_ack: Read and acknowledge inbox notifications\n" +
-          "- cc_vislzr_canvases: Browse visual canvases (mindmaps, dashboards)",
+          "- cc_vislzr_canvases: Browse visual canvases (mindmaps, dashboards)\n" +
+          "- cc_skill_search: Search CC's skill library (operations, safety, execution patterns)",
       };
     });
 
