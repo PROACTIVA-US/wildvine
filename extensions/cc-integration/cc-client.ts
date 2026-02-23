@@ -528,6 +528,29 @@ export async function ccKnowledgeSessionEnd(
   );
 }
 
+export async function ccSkillsIngest(skill: {
+  name: string;
+  content: string;
+  source?: string;
+  priority?: string;
+  keywords?: string[];
+}): Promise<{ run_id: string }> {
+  return ccFetch<{ run_id: string }>("/api/runs", {
+    method: "POST",
+    body: JSON.stringify({
+      pipeline_path: "pipelines/workflow/skill-ingestion.pipeline.yml",
+      project_name: "wildvine",
+      project_type: "core",
+      stage_payload: {
+        skill_name: skill.name,
+        skill_content: skill.content,
+        skill_source: skill.source ?? "wildvine",
+        skill_priority: skill.priority,
+        skill_keywords: skill.keywords,
+      },
+    }),
+  });
+}
 // ── Notes (via Agent Inbox) ───────────────────────────────
 
 export interface CCInboxItem {

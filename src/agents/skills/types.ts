@@ -16,8 +16,11 @@ export type SkillInstallSpec = {
   targetDir?: string;
 };
 
+export type SkillPriority = "P0" | "P1" | "P2";
+
 export type WildvineSkillMetadata = {
   always?: boolean;
+  priority?: SkillPriority;
   skillKey?: string;
   primaryEnv?: string;
   emoji?: string;
