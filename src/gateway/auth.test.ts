@@ -39,8 +39,8 @@ describe("gateway auth", () => {
       resolveGatewayAuth({
         authConfig: {},
         env: {
-          WILDVINE_GATEWAY_TOKEN: "legacy-token",
-          WILDVINE_GATEWAY_PASSWORD: "legacy-password",
+          WILDVINEBOT_GATEWAY_TOKEN: "legacy-token",
+          WILDVINEBOT_GATEWAY_PASSWORD: "legacy-password",
         } as NodeJS.ProcessEnv,
       }),
     ).toMatchObject({

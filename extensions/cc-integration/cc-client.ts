@@ -164,6 +164,20 @@ export interface CCNode {
   updated_at: string;
 }
 
+export interface CCEdge {
+  id: string;
+  project_id: string;
+  canvas_id: string;
+  source_node_id: string;
+  target_node_id: string;
+  edge_type: string;
+  label: string | null;
+  weight: number;
+  data: Record<string, unknown> | null;
+  created_at: string;
+  updated_at: string;
+}
+
 // ── Helpers ────────────────────────────────────────────────
 
 async function ccFetch<T>(path: string, init?: RequestInit): Promise<T> {
@@ -450,6 +464,377 @@ export async function ccVislzrStats(projectId: string): Promise<{
 }> {
   const params = new URLSearchParams({ project_id: projectId });
   return ccFetch(`/api/vislzr/stats?${params}`);
+}
+
+export async function ccVislzrCanvasCreate(
+  projectId: string,
+  opts: { name: string; description?: string },
+): Promise<CCCanvas> {
+  const params = new URLSearchParams({ project_id: projectId });
+  return ccFetch<CCCanvas>(`/api/vislzr/canvases?${params}`, {
+    method: "POST",
+    body: JSON.stringify(opts),
+  });
+}
+
+export async function ccVislzrCanvasUpdate(
+  canvasId: string,
+  projectId: string,
+  opts: { name?: string; description?: string },
+): Promise<CCCanvas> {
+  const params = new URLSearchParams({ project_id: projectId });
+  return ccFetch<CCCanvas>(`/api/vislzr/canvases/${encodeURIComponent(canvasId)}?${params}`, {
+    method: "PATCH",
+    body: JSON.stringify(opts),
+  });
+}
+
+export async function ccVislzrCanvasDelete(
+  canvasId: string,
+  projectId: string,
+): Promise<{ deleted: boolean }> {
+  const params = new URLSearchParams({ project_id: projectId });
+  return ccFetch(`/api/vislzr/canvases/${encodeURIComponent(canvasId)}?${params}`, {
+    method: "DELETE",
+  });
+}
+
+export async function ccVislzrNodeCreate(
+  canvasId: string,
+  projectId: string,
+  opts: {
+    node_type: string;
+    label: string;
+    position_x?: number;
+    position_y?: number;
+    data?: Record<string, unknown>;
+    linked_entity_type?: string;
+    linked_entity_id?: string;
+  },
+): Promise<CCNode> {
+  const params = new URLSearchParams({ project_id: projectId });
+  return ccFetch<CCNode>(`/api/vislzr/canvases/${encodeURIComponent(canvasId)}/nodes?${params}`, {
+    method: "POST",
+    body: JSON.stringify(opts),
+  });
+}
+
+export async function ccVislzrNodeUpdate(
+  canvasId: string,
+  nodeId: string,
+  projectId: string,
+  opts: {
+    label?: string;
+    position_x?: number;
+    position_y?: number;
+    data?: Record<string, unknown>;
+  },
+): Promise<CCNode> {
+  const params = new URLSearchParams({ project_id: projectId });
+  return ccFetch<CCNode>(
+    `/api/vislzr/canvases/${encodeURIComponent(canvasId)}/nodes/${encodeURIComponent(nodeId)}?${params}`,
+    { method: "PATCH", body: JSON.stringify(opts) },
+  );
+}
+
+export async function ccVislzrNodeBulkUpdate(
+  canvasId: string,
+  projectId: string,
+  updates: {
+    id: string;
+    position_x?: number;
+    position_y?: number;
+    data?: Record<string, unknown>;
+  }[],
+): Promise<{ updated: number }> {
+  const params = new URLSearchParams({ project_id: projectId });
+  return ccFetch(`/api/vislzr/canvases/${encodeURIComponent(canvasId)}/nodes/bulk?${params}`, {
+    method: "PATCH",
+    body: JSON.stringify({ updates }),
+  });
+}
+
+export async function ccVislzrNodeDelete(
+  canvasId: string,
+  nodeId: string,
+  projectId: string,
+): Promise<{ deleted: boolean }> {
+  const params = new URLSearchParams({ project_id: projectId });
+  return ccFetch(
+    `/api/vislzr/canvases/${encodeURIComponent(canvasId)}/nodes/${encodeURIComponent(nodeId)}?${params}`,
+    { method: "DELETE" },
+  );
+}
+
+export async function ccVislzrEdgeCreate(
+  canvasId: string,
+  projectId: string,
+  opts: {
+    source_node_id: string;
+    target_node_id: string;
+    edge_type: string;
+    label?: string;
+    weight?: number;
+    data?: Record<string, unknown>;
+  },
+): Promise<CCEdge> {
+  const params = new URLSearchParams({ project_id: projectId });
+  return ccFetch<CCEdge>(`/api/vislzr/canvases/${encodeURIComponent(canvasId)}/edges?${params}`, {
+    method: "POST",
+    body: JSON.stringify(opts),
+  });
+}
+
+export async function ccVislzrEdgeUpdate(
+  canvasId: string,
+  edgeId: string,
+  projectId: string,
+  opts: { label?: string; weight?: number; data?: Record<string, unknown> },
+): Promise<CCEdge> {
+  const params = new URLSearchParams({ project_id: projectId });
+  return ccFetch<CCEdge>(
+    `/api/vislzr/canvases/${encodeURIComponent(canvasId)}/edges/${encodeURIComponent(edgeId)}?${params}`,
+    { method: "PATCH", body: JSON.stringify(opts) },
+  );
+}
+
+export async function ccVislzrEdgeDelete(
+  canvasId: string,
+  edgeId: string,
+  projectId: string,
+): Promise<{ deleted: boolean }> {
+  const params = new URLSearchParams({ project_id: projectId });
+  return ccFetch(
+    `/api/vislzr/canvases/${encodeURIComponent(canvasId)}/edges/${encodeURIComponent(edgeId)}?${params}`,
+    { method: "DELETE" },
+  );
+}
+
+export async function ccVislzrWander(
+  canvasId: string,
+  projectId: string,
+  startNodeId: string,
+  opts?: { depth?: number; edge_types?: string[] },
+): Promise<{ nodes: CCNode[]; edges: CCEdge[] }> {
+  const params = new URLSearchParams({ project_id: projectId });
+  return ccFetch(`/api/vislzr/canvases/${encodeURIComponent(canvasId)}/wander?${params}`, {
+    method: "POST",
+    body: JSON.stringify({
+      start_node_id: startNodeId,
+      depth: opts?.depth ?? 2,
+      edge_types: opts?.edge_types,
+    }),
+  });
+}
+
+export async function ccVislzrGenerateLayout(
+  canvasId: string,
+  projectId: string,
+  opts?: { algorithm?: string },
+): Promise<{ positions: Record<string, { x: number; y: number }> }> {
+  const params = new URLSearchParams({ project_id: projectId });
+  return ccFetch(`/api/vislzr/canvases/${encodeURIComponent(canvasId)}/layout?${params}`, {
+    method: "POST",
+    body: JSON.stringify({ algorithm: opts?.algorithm ?? "force" }),
+  });
+}
+
+// ── IDEALZR Types ─────────────────────────────────────────
+
+export interface CCGoal {
+  id: string;
+  project_id: string;
+  title: string;
+  description: string | null;
+  state: "DRAFT" | "ACTIVE" | "ACHIEVED" | "ARCHIVED";
+  progress: number;
+  canvas_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CCHypothesis {
+  id: string;
+  project_id: string;
+  goal_id: string;
+  title: string;
+  description: string | null;
+  state: "PROPOSED" | "TESTING" | "VALIDATED" | "INVALIDATED";
+  confidence: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CCEvidence {
+  id: string;
+  project_id: string;
+  hypothesis_id: string;
+  title: string;
+  description: string | null;
+  kind: "SUPPORTS" | "CONTRADICTS" | "NEUTRAL";
+  source: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// ── IDEALZR API Functions ─────────────────────────────────
+
+export async function ccIdealzrGoals(
+  projectId: string,
+  opts?: { state?: string; limit?: number },
+): Promise<CCGoal[]> {
+  const params = new URLSearchParams({ project_id: projectId });
+  if (opts?.state) params.set("state", opts.state);
+  if (opts?.limit) params.set("limit", String(opts.limit));
+  return ccFetch<CCGoal[]>(`/api/idealzr/goals?${params}`);
+}
+
+export async function ccIdealzrGoalCreate(
+  projectId: string,
+  opts: {
+    title: string;
+    description?: string;
+    state?: string;
+    progress?: number;
+    canvas_id?: string;
+  },
+): Promise<CCGoal> {
+  const params = new URLSearchParams({ project_id: projectId });
+  return ccFetch<CCGoal>(`/api/idealzr/goals?${params}`, {
+    method: "POST",
+    body: JSON.stringify(opts),
+  });
+}
+
+export async function ccIdealzrGoalUpdate(
+  goalId: string,
+  projectId: string,
+  opts: {
+    title?: string;
+    description?: string;
+    state?: string;
+    progress?: number;
+    canvas_id?: string;
+  },
+): Promise<CCGoal> {
+  const params = new URLSearchParams({ project_id: projectId });
+  return ccFetch<CCGoal>(`/api/idealzr/goals/${encodeURIComponent(goalId)}?${params}`, {
+    method: "PATCH",
+    body: JSON.stringify(opts),
+  });
+}
+
+export async function ccIdealzrGoalDelete(
+  goalId: string,
+  projectId: string,
+): Promise<{ deleted: boolean }> {
+  const params = new URLSearchParams({ project_id: projectId });
+  return ccFetch(`/api/idealzr/goals/${encodeURIComponent(goalId)}?${params}`, {
+    method: "DELETE",
+  });
+}
+
+export async function ccIdealzrHypotheses(
+  projectId: string,
+  opts?: { goal_id?: string; state?: string; limit?: number },
+): Promise<CCHypothesis[]> {
+  const params = new URLSearchParams({ project_id: projectId });
+  if (opts?.goal_id) params.set("goal_id", opts.goal_id);
+  if (opts?.state) params.set("state", opts.state);
+  if (opts?.limit) params.set("limit", String(opts.limit));
+  return ccFetch<CCHypothesis[]>(`/api/idealzr/hypotheses?${params}`);
+}
+
+export async function ccIdealzrHypothesisCreate(
+  projectId: string,
+  opts: {
+    goal_id: string;
+    title: string;
+    description?: string;
+    state?: string;
+    confidence?: number;
+  },
+): Promise<CCHypothesis> {
+  const params = new URLSearchParams({ project_id: projectId });
+  return ccFetch<CCHypothesis>(`/api/idealzr/hypotheses?${params}`, {
+    method: "POST",
+    body: JSON.stringify(opts),
+  });
+}
+
+export async function ccIdealzrHypothesisUpdate(
+  hypothesisId: string,
+  projectId: string,
+  opts: { title?: string; description?: string; state?: string; confidence?: number },
+): Promise<CCHypothesis> {
+  const params = new URLSearchParams({ project_id: projectId });
+  return ccFetch<CCHypothesis>(
+    `/api/idealzr/hypotheses/${encodeURIComponent(hypothesisId)}?${params}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(opts),
+    },
+  );
+}
+
+export async function ccIdealzrHypothesisDelete(
+  hypothesisId: string,
+  projectId: string,
+): Promise<{ deleted: boolean }> {
+  const params = new URLSearchParams({ project_id: projectId });
+  return ccFetch(`/api/idealzr/hypotheses/${encodeURIComponent(hypothesisId)}?${params}`, {
+    method: "DELETE",
+  });
+}
+
+export async function ccIdealzrEvidence(
+  projectId: string,
+  opts?: { hypothesis_id?: string; kind?: string; limit?: number },
+): Promise<CCEvidence[]> {
+  const params = new URLSearchParams({ project_id: projectId });
+  if (opts?.hypothesis_id) params.set("hypothesis_id", opts.hypothesis_id);
+  if (opts?.kind) params.set("kind", opts.kind);
+  if (opts?.limit) params.set("limit", String(opts.limit));
+  return ccFetch<CCEvidence[]>(`/api/idealzr/evidence?${params}`);
+}
+
+export async function ccIdealzrEvidenceCreate(
+  projectId: string,
+  opts: {
+    hypothesis_id: string;
+    title: string;
+    description?: string;
+    kind?: string;
+    source?: string;
+  },
+): Promise<CCEvidence> {
+  const params = new URLSearchParams({ project_id: projectId });
+  return ccFetch<CCEvidence>(`/api/idealzr/evidence?${params}`, {
+    method: "POST",
+    body: JSON.stringify(opts),
+  });
+}
+
+export async function ccIdealzrEvidenceUpdate(
+  evidenceId: string,
+  projectId: string,
+  opts: { title?: string; description?: string; kind?: string; source?: string },
+): Promise<CCEvidence> {
+  const params = new URLSearchParams({ project_id: projectId });
+  return ccFetch<CCEvidence>(`/api/idealzr/evidence/${encodeURIComponent(evidenceId)}?${params}`, {
+    method: "PATCH",
+    body: JSON.stringify(opts),
+  });
+}
+
+export async function ccIdealzrEvidenceDelete(
+  evidenceId: string,
+  projectId: string,
+): Promise<{ deleted: boolean }> {
+  const params = new URLSearchParams({ project_id: projectId });
+  return ccFetch(`/api/idealzr/evidence/${encodeURIComponent(evidenceId)}?${params}`, {
+    method: "DELETE",
+  });
 }
 
 // ── Skills ────────────────────────────────────────────────

@@ -605,12 +605,25 @@ export function attachGatewayUpgradeHandler(opts: {
   resolvedAuth: ResolvedGatewayAuth;
   /** Optional rate limiter for auth brute-force protection. */
   rateLimiter?: AuthRateLimiter;
+  /** Optional voice WebSocket handler for /voice path. */
+  onVoiceUpgrade?: (
+    req: IncomingMessage,
+    socket: import("node:stream").Duplex,
+    head: Buffer,
+  ) => void;
 }) {
-  const { httpServer, wss, canvasHost, clients, resolvedAuth, rateLimiter } = opts;
+  const { httpServer, wss, canvasHost, clients, resolvedAuth, rateLimiter, onVoiceUpgrade } = opts;
   httpServer.on("upgrade", (req, socket, head) => {
     void (async () => {
+      const url = new URL(req.url ?? "/", "http://localhost");
+
+      // Voice WebSocket at /voice
+      if (url.pathname === "/voice" && onVoiceUpgrade) {
+        onVoiceUpgrade(req, socket, head);
+        return;
+      }
+
       if (canvasHost) {
-        const url = new URL(req.url ?? "/", "http://localhost");
         if (url.pathname === CANVAS_WS_PATH) {
           const configSnapshot = loadConfig();
           const trustedProxies = configSnapshot.gateway?.trustedProxies ?? [];

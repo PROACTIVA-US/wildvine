@@ -84,7 +84,9 @@
   padding: 0 20px;
   height: var(--shell-topbar-height);
   border-bottom: 1px solid var(--border);
-  background: var(--bg);
+  background: var(--chrome);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 .topbar-left {
@@ -199,8 +201,11 @@
   overflow-y: auto;
   overflow-x: hidden;
   padding: 16px 12px;
-  background: var(--bg);
-  scrollbar-width: none; /* Firefox */
+  background: var(--chrome);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-right: 1px solid var(--border);
+  scrollbar-width: none;
   transition:
     width var(--shell-focus-duration) var(--shell-focus-ease),
     padding var(--shell-focus-duration) var(--shell-focus-ease),
@@ -277,6 +282,12 @@
   color: var(--text);
 }
 
+/* Nav as flex column for spacer between main + bottom */
+.nav {
+  display: flex;
+  flex-direction: column;
+}
+
 /* Nav groups */
 .nav-group {
   margin-bottom: 20px;
@@ -286,6 +297,16 @@
 
 .nav-group:last-child {
   margin-bottom: 0;
+}
+
+.nav-spacer {
+  flex: 1;
+}
+
+.nav-group--bottom {
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
 }
 
 .nav-group__items {
@@ -407,11 +428,30 @@
 .nav-item.active {
   color: var(--text-strong);
   background: var(--accent-subtle);
+  border-left: 3px solid;
+  border-image: linear-gradient(180deg, var(--accent), var(--accent-2)) 1;
+  padding-left: 7px;
 }
 
 .nav-item.active .nav-item__icon {
   opacity: 1;
   color: var(--accent);
+}
+
+.nav-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  margin-left: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  border-radius: var(--radius-full);
+  background: linear-gradient(135deg, var(--accent), var(--accent-2, var(--accent)));
+  color: #fff;
 }
 
 /* ===========================================

@@ -65,7 +65,13 @@ import {
 } from "./controllers/skills.ts";
 import "./components/voice-toggle.ts";
 import { icons } from "./icons.ts";
-import { normalizeBasePath, TAB_GROUPS, subtitleForTab, titleForTab } from "./navigation.ts";
+import {
+  normalizeBasePath,
+  MAIN_NAV_ITEMS,
+  BOTTOM_NAV_ITEMS,
+  subtitleForTab,
+  titleForTab,
+} from "./navigation.ts";
 import { renderAgents } from "./views/agents.ts";
 import { renderCcArena } from "./views/cc-arena.ts";
 import { renderCcGovernor } from "./views/cc-governor.ts";
@@ -78,14 +84,22 @@ import { renderCron } from "./views/cron.ts";
 import { renderDebug } from "./views/debug.ts";
 import { renderExecApprovalPrompt } from "./views/exec-approval.ts";
 import { renderGatewayUrlConfirmation } from "./views/gateway-url-confirmation.ts";
+import { renderGovernance } from "./views/governance.ts";
+import { renderHome } from "./views/home.ts";
 import { renderInstances } from "./views/instances.ts";
+import { renderLivingNote } from "./views/living-note.ts";
 import { renderLogs } from "./views/logs.ts";
 import { renderNodes } from "./views/nodes.ts";
 import { renderNotesContext } from "./views/notes-context.ts";
 import { renderNotes } from "./views/notes.ts";
 import { renderOverview } from "./views/overview.ts";
+import { renderProfile } from "./views/profile.ts";
 import { renderSessions } from "./views/sessions.ts";
+import { renderSettingsContainer } from "./views/settings-container.ts";
 import { renderSkills } from "./views/skills.ts";
+import { renderStrategy } from "./views/strategy.ts";
+import { renderVineView } from "./views/vine-view.ts";
+import { renderVislzr } from "./views/vislzr.ts";
 
 const AVATAR_DATA_RE = /^data:/i;
 const AVATAR_HTTP_RE = /^https?:\/\//i;
@@ -146,8 +160,7 @@ export function renderApp(state: AppViewState) {
               <img src=${basePath ? `${basePath}/favicon.svg` : "/favicon.svg"} alt="Wildvine" />
             </div>
             <div class="brand-text">
-              <div class="brand-title">WILDVINE</div>
-              <div class="brand-sub">Gateway Dashboard</div>
+              <div class="brand-title" style="background: linear-gradient(135deg, #7B2FBE, #00BCD4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">WILDVINE</div>
             </div>
           </div>
         </div>
@@ -170,60 +183,19 @@ export function renderApp(state: AppViewState) {
               }
             }}
           />
-          <div class="pill" title="CommandCentral: ${state.ccProcessStatus?.overall ?? "unknown"}">
-            <span class="statusDot ${state.ccProcessStatus?.overall === "running" ? "ok" : state.ccProcessStatus?.overall === "partial" ? "warn" : ""}"></span>
-            <span>CC</span>
-          </div>
-          <div class="pill">
-            <span class="statusDot ${state.connected ? "ok" : ""}"></span>
-            <span>Health</span>
-            <span class="mono">${state.connected ? "OK" : "Offline"}</span>
-          </div>
           ${renderThemeToggle(state)}
         </div>
       </header>
       <aside class="nav ${state.settings.navCollapsed ? "nav--collapsed" : ""}">
-        ${TAB_GROUPS.map((group) => {
-          const isGroupCollapsed = state.settings.navGroupsCollapsed[group.label] ?? false;
-          const hasActiveTab = group.tabs.some((tab) => tab === state.tab);
-          return html`
-            <div class="nav-group ${isGroupCollapsed && !hasActiveTab ? "nav-group--collapsed" : ""}">
-              <button
-                class="nav-label"
-                @click=${() => {
-                  const next = { ...state.settings.navGroupsCollapsed };
-                  next[group.label] = !isGroupCollapsed;
-                  state.applySettings({
-                    ...state.settings,
-                    navGroupsCollapsed: next,
-                  });
-                }}
-                aria-expanded=${!isGroupCollapsed}
-              >
-                <span class="nav-label__text">${group.label}</span>
-                <span class="nav-label__chevron">${isGroupCollapsed ? "+" : "−"}</span>
-              </button>
-              <div class="nav-group__items">
-                ${group.tabs.map((tab) => renderTab(state, tab))}
-              </div>
-            </div>
-          `;
-        })}
-        <div class="nav-group nav-group--links">
-          <div class="nav-label nav-label--static">
-            <span class="nav-label__text">Resources</span>
-          </div>
+        <div class="nav-group">
           <div class="nav-group__items">
-            <a
-              class="nav-item nav-item--external"
-              href="https://docs.wildvine.bot"
-              target="_blank"
-              rel="noreferrer"
-              title="Docs (opens in new tab)"
-            >
-              <span class="nav-item__icon" aria-hidden="true">${icons.book}</span>
-              <span class="nav-item__text">Docs</span>
-            </a>
+            ${MAIN_NAV_ITEMS.map((item) => renderTab(state, item.tab))}
+          </div>
+        </div>
+        <div class="nav-spacer"></div>
+        <div class="nav-group nav-group--bottom">
+          <div class="nav-group__items">
+            ${BOTTOM_NAV_ITEMS.map((item) => renderTab(state, item.tab))}
           </div>
         </div>
       </aside>
@@ -238,6 +210,304 @@ export function renderApp(state: AppViewState) {
             ${isChat ? renderChatControls(state) : nothing}
           </div>
         </section>
+
+        ${
+          state.tab === "home"
+            ? renderHome({
+                connected: state.connected,
+                agentCount: state.agentsList?.agents?.length ?? 0,
+                governorCount: state.ccGovernorCount,
+                recentRuns:
+                  state.ccRuns?.slice(0, 5)?.map((r: Record<string, unknown>) => ({
+                    run_id: typeof r.run_id === "string" ? r.run_id : "",
+                    pipeline_name: typeof r.pipeline_name === "string" ? r.pipeline_name : "",
+                    status: typeof r.status === "string" ? r.status : "",
+                    started_at: typeof r.started_at === "string" ? r.started_at : "",
+                  })) ?? [],
+                ccHealthy: state.ccProcessStatus?.overall === "running",
+                onNavigate: (tab) => state.setTab(tab as import("./navigation.ts").Tab),
+              })
+            : nothing
+        }
+
+        ${
+          state.tab === "strategy"
+            ? renderStrategy({
+                loading:
+                  ((state as unknown as Record<string, unknown>).idealzrLoading as boolean) ??
+                  false,
+                error:
+                  ((state as unknown as Record<string, unknown>).idealzrError as string | null) ??
+                  null,
+                goals:
+                  ((state as unknown as Record<string, unknown>)
+                    .idealzrGoals as unknown[] as import("./views/strategy.ts").StrategyGoal[]) ??
+                  [],
+                hypotheses:
+                  ((state as unknown as Record<string, unknown>)
+                    .idealzrHypotheses as unknown[] as import("./views/strategy.ts").StrategyHypothesis[]) ??
+                  [],
+                evidence:
+                  ((state as unknown as Record<string, unknown>)
+                    .idealzrEvidence as unknown[] as import("./views/strategy.ts").StrategyEvidence[]) ??
+                  [],
+                showGoalForm:
+                  (state as unknown as Record<string, boolean>).strategyShowGoalForm ?? false,
+                goalFormTitle:
+                  (state as unknown as Record<string, string>).strategyGoalFormTitle ?? "",
+                goalFormDescription:
+                  (state as unknown as Record<string, string>).strategyGoalFormDescription ?? "",
+                showHypothesisForm:
+                  (state as unknown as Record<string, boolean>).strategyShowHypothesisForm ?? false,
+                hypothesisFormGoalId:
+                  (state as unknown as Record<string, string>).strategyHypothesisFormGoalId ?? "",
+                hypothesisFormTitle:
+                  (state as unknown as Record<string, string>).strategyHypothesisFormTitle ?? "",
+                showEvidenceForm:
+                  (state as unknown as Record<string, boolean>).strategyShowEvidenceForm ?? false,
+                evidenceFormHypothesisId:
+                  (state as unknown as Record<string, string>).strategyEvidenceFormHypothesisId ??
+                  "",
+                evidenceFormTitle:
+                  (state as unknown as Record<string, string>).strategyEvidenceFormTitle ?? "",
+                evidenceFormKind:
+                  (state as unknown as Record<string, string>).strategyEvidenceFormKind ??
+                  "SUPPORTS",
+                onRefresh: () => {
+                  /* loadIdealzrAll will be wired in app.ts */
+                },
+                onToggleGoalForm: () => {
+                  (state as unknown as Record<string, boolean>).strategyShowGoalForm = !(
+                    state as unknown as Record<string, boolean>
+                  ).strategyShowGoalForm;
+                },
+                onGoalFormTitleChange: (v) => {
+                  (state as unknown as Record<string, string>).strategyGoalFormTitle = v;
+                },
+                onGoalFormDescriptionChange: (v) => {
+                  (state as unknown as Record<string, string>).strategyGoalFormDescription = v;
+                },
+                onCreateGoal: () => {},
+                onDeleteGoal: () => {},
+                onUpdateGoalState: () => {},
+                onToggleHypothesisForm: (goalId) => {
+                  (state as unknown as Record<string, boolean>).strategyShowHypothesisForm = true;
+                  (state as unknown as Record<string, string>).strategyHypothesisFormGoalId =
+                    goalId;
+                },
+                onHypothesisFormTitleChange: (v) => {
+                  (state as unknown as Record<string, string>).strategyHypothesisFormTitle = v;
+                },
+                onCreateHypothesis: () => {},
+                onDeleteHypothesis: () => {},
+                onToggleEvidenceForm: (hypothesisId) => {
+                  (state as unknown as Record<string, boolean>).strategyShowEvidenceForm = true;
+                  (state as unknown as Record<string, string>).strategyEvidenceFormHypothesisId =
+                    hypothesisId;
+                },
+                onEvidenceFormTitleChange: (v) => {
+                  (state as unknown as Record<string, string>).strategyEvidenceFormTitle = v;
+                },
+                onEvidenceFormKindChange: (v) => {
+                  (state as unknown as Record<string, string>).strategyEvidenceFormKind = v;
+                },
+                onCreateEvidence: () => {},
+                onNavigateVislzr: () => {
+                  state.setTab("vislzr");
+                },
+              })
+            : nothing
+        }
+
+        ${
+          state.tab === "governance"
+            ? renderGovernance({
+                loading: state.ccGovernorLoading,
+                pending: state.ccGovernorPending.map((r) => ({
+                  id: r.id,
+                  from_instance: r.from_instance,
+                  to_instance: r.to_instance,
+                  kind: r.kind,
+                  reason: r.reason,
+                  artifact_ref: r.artifact_ref,
+                  created_at: r.created_at,
+                  ack_info: r.ack_info,
+                })),
+                count: state.ccGovernorCount,
+                error: state.ccGovernorError,
+                historyLoading: false,
+                history: [],
+                activeTab:
+                  ((state as unknown as Record<string, string>).governanceActiveTab as
+                    | "pending"
+                    | "history") ?? "pending",
+                commentDraft:
+                  (state as unknown as Record<string, string>).governanceCommentDraft ?? "",
+                onRefresh: () => loadCcGovernor(state),
+                onApprove: (id, comment) => approveCcReferral(state, id, comment),
+                onDeny: (id, comment) => denyCcReferral(state, id, comment),
+                onTabChange: (tab) => {
+                  (state as unknown as Record<string, string>).governanceActiveTab = tab;
+                },
+                onCommentChange: (v) => {
+                  (state as unknown as Record<string, string>).governanceCommentDraft = v;
+                },
+                onLoadHistory: () => {},
+              })
+            : nothing
+        }
+
+        ${
+          state.tab === "living-note"
+            ? renderLivingNote({
+                loading: state.notesLoading,
+                items: state.notesItems.map((item) => ({
+                  id: item.id,
+                  subject: item.subject,
+                  body: item.body,
+                  priority: item.priority,
+                  status: item.status,
+                  created_at: item.created_at,
+                })),
+                error: state.notesError,
+                captureDraft: state.notesCaptureDraft,
+                captureBody: "",
+                capturePriority: state.notesCapturePriority,
+                captureBusy: state.notesCaptureBusy,
+                captureError: state.notesCaptureError,
+                searchQuery: state.notesSearchQuery,
+                searchResults: state.notesSearchResults.map((r) => ({
+                  id: r.id,
+                  title: r.title,
+                  snippet: r.snippet ?? null,
+                  entity_type: r.entity_type ?? "unknown",
+                  score: r.score ?? 0,
+                })),
+                searchLoading: state.notesSearchLoading,
+                filter:
+                  state.notesFilter === "active"
+                    ? "all"
+                    : state.notesFilter === "dismissed"
+                      ? "all"
+                      : (state.notesFilter as "all" | "RED" | "YELLOW" | "GREEN"),
+                onCaptureDraftChange: (v) => (state.notesCaptureDraft = v),
+                onCaptureBodyChange: () => {},
+                onCapturePriorityChange: (v) => (state.notesCapturePriority = v),
+                onCapture: () => captureNote(state as Parameters<typeof captureNote>[0]),
+                onSearchQueryChange: (v) => (state.notesSearchQuery = v),
+                onSearch: () => searchNotes(state as Parameters<typeof searchNotes>[0]),
+                onFilterChange: (v) => {
+                  if (v === "all") {
+                    state.notesFilter = "all";
+                  } else {
+                    state.notesFilter = "all";
+                  }
+                  void loadNotes(state as Parameters<typeof loadNotes>[0]);
+                },
+                onDismiss: (id) => dismissNote(state as Parameters<typeof dismissNote>[0], id),
+                onRefresh: () => loadNotes(state as Parameters<typeof loadNotes>[0]),
+              })
+            : nothing
+        }
+
+        ${
+          state.tab === "profile"
+            ? renderProfile({
+                connected: state.connected,
+                gatewayUrl: state.settings.gatewayUrl,
+                password: state.password,
+                theme: state.theme,
+                onPasswordChange: (v) => state.setPassword(v),
+                onThemeChange: (t) => state.setTheme(t as import("./theme.ts").ThemeMode),
+              })
+            : nothing
+        }
+
+        ${
+          state.tab === "vislzr"
+            ? renderVislzr({
+                loading: (state as unknown as Record<string, boolean>).vislzrLoading ?? false,
+                error: (state as unknown as Record<string, string | null>).vislzrError ?? null,
+                canvases:
+                  ((state as unknown as Record<string, unknown>).vislzrCanvases as {
+                    id: string;
+                    name: string;
+                    description: string | null;
+                    node_count: number;
+                    edge_count: number;
+                  }[]) ?? [],
+                selectedCanvasId:
+                  (state as unknown as Record<string, string | null>).vislzrSelectedCanvasId ??
+                  null,
+                canvasNodes:
+                  ((state as unknown as Record<string, unknown>).vislzrCanvasNodes as {
+                    id: string;
+                    node_type: string;
+                    label: string;
+                    position_x: number;
+                    position_y: number;
+                    data: Record<string, unknown> | null;
+                  }[]) ?? [],
+                canvasEdges:
+                  ((state as unknown as Record<string, unknown>).vislzrCanvasEdges as {
+                    id: string;
+                    source_node_id: string;
+                    target_node_id: string;
+                    edge_type: string;
+                    label: string | null;
+                  }[]) ?? [],
+                reactMounted: false,
+                onRefresh: () => {},
+                onSelectCanvas: () => {},
+                onCreateCanvas: () => {},
+                onDeleteCanvas: () => {},
+                onNodeClick: () => {},
+                onNodeDragEnd: () => {},
+                onAddNode: () => {},
+                onMountReact: () => {},
+              })
+            : nothing
+        }
+
+        ${
+          state.tab === "vine-view"
+            ? renderVineView({
+                loading: (state as unknown as Record<string, boolean>).vineViewLoading ?? false,
+                error: (state as unknown as Record<string, string | null>).vineViewError ?? null,
+                data:
+                  ((state as unknown as Record<string, unknown>).vineViewData as
+                    | import("./views/vine-view.ts").VineViewNodeData
+                    | null) ?? null,
+                reactMounted: false,
+                onRefresh: () => {},
+                onMountReact: () => {},
+              })
+            : nothing
+        }
+
+        ${
+          state.tab === "arena"
+            ? html`
+              ${renderNotesContext({ results: state.notesSearchResults, loading: state.notesSearchLoading })}
+              ${renderCcArena({
+                loading: state.ccArenaLoading,
+                sessions: state.ccArenaSessions,
+                error: state.ccArenaError,
+                selectedId: state.ccArenaSelectedId,
+                messages: state.ccArenaMessages,
+                messagesLoading: state.ccArenaMessagesLoading,
+                chatInput: state.ccArenaChatInput,
+                onRefresh: () => loadCcArenaSessions(state),
+                onSelectSession: (id) => {
+                  state.ccArenaSelectedId = id;
+                  void loadCcArenaMessages(state, id);
+                },
+                onChatInputChange: (v) => (state.ccArenaChatInput = v),
+                onSendChat: () => sendCcArenaChat(state),
+              })}
+            `
+            : nothing
+        }
 
         ${
           state.tab === "overview"
@@ -1098,6 +1368,19 @@ export function renderApp(state: AppViewState) {
                 onSendChat: () => sendCcArenaChat(state),
               })}
             `
+            : nothing
+        }
+        ${
+          state.tab === "settings"
+            ? renderSettingsContainer({
+                activeSubTab:
+                  ((state as unknown as Record<string, string>)
+                    .settingsSubTab as import("./navigation.ts").SettingsSubTab) ?? "config",
+                onSubTabChange: (tab) => {
+                  (state as unknown as Record<string, string>).settingsSubTab = tab;
+                },
+                content: nothing,
+              })
             : nothing
         }
       </main>

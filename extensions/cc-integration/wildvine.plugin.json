@@ -1,0 +1,14 @@
+{
+  "id": "cc-integration",
+  "name": "CommandCentral Integration",
+  "description": "Bridges Wildvine to CommandCentral — KB search, knowledge capture, pipelines, governor, arena, inbox, VISLZR, skills",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "enabled": {
+        "type": "boolean"
+      }
+    }
+  }
+}

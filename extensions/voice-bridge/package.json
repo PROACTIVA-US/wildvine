@@ -1,0 +1,18 @@
+{
+  "name": "@wildvine/voice-bridge",
+  "version": "2026.2.22",
+  "private": true,
+  "description": "Voice bridge — Deepgram STT, agent routing, multi-provider TTS",
+  "type": "module",
+  "dependencies": {
+    "ws": "^8.19.0"
+  },
+  "devDependencies": {
+    "wildvine": "workspace:*"
+  },
+  "wildvine": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}

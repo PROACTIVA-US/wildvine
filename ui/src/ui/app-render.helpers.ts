@@ -15,6 +15,9 @@ function tabBadge(state: AppViewState, tab: Tab): string | null {
   if (tab === "cc-governor" && state.ccGovernorCount > 0) {
     return String(state.ccGovernorCount);
   }
+  if (tab === "governance" && state.ccGovernorCount > 0) {
+    return String(state.ccGovernorCount);
+  }
   return null;
 }
 

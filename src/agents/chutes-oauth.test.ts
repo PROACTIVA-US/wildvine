@@ -5,7 +5,7 @@ describe("parseOAuthCallbackInput", () => {
   it("rejects code-only input (state required)", () => {
     const parsed = parseOAuthCallbackInput("abc123", "expected-state");
     expect(parsed).toEqual({
-      error: "Paste the full redirect URL (must include code + state).",
+      error: "Paste the full redirect URL, not just the code.",
     });
   });
 
@@ -17,9 +17,11 @@ describe("parseOAuthCallbackInput", () => {
     expect(parsed).toEqual({ code: "abc123", state: "expected-state" });
   });
 
-  it("accepts querystring-only input when state matches", () => {
+  it("rejects querystring-only input (requires full URL)", () => {
     const parsed = parseOAuthCallbackInput("code=abc123&state=expected-state", "expected-state");
-    expect(parsed).toEqual({ code: "abc123", state: "expected-state" });
+    expect(parsed).toEqual({
+      error: "Paste the full redirect URL, not just the code.",
+    });
   });
 
   it("rejects missing state", () => {
@@ -38,7 +40,7 @@ describe("parseOAuthCallbackInput", () => {
       "expected-state",
     );
     expect(parsed).toEqual({
-      error: "OAuth state mismatch - possible CSRF attack. Please retry login.",
+      error: "State mismatch. This may be a CSRF attack. Please restart the login flow.",
     });
   });
 });

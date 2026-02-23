@@ -7,6 +7,8 @@
 .card {
   border: 1px solid var(--border);
   background: var(--card);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border-radius: var(--radius-lg);
   padding: 20px;
   animation: rise 0.35s var(--ease-out) backwards;
@@ -14,16 +16,14 @@
     border-color var(--duration-normal) var(--ease-out),
     box-shadow var(--duration-normal) var(--ease-out),
     transform var(--duration-normal) var(--ease-out);
-  box-shadow:
-    var(--shadow-sm),
-    inset 0 1px 0 var(--card-highlight);
+  box-shadow: var(--shadow-sm);
 }
 
 .card:hover {
   border-color: var(--border-strong);
   box-shadow:
     var(--shadow-md),
-    inset 0 1px 0 var(--card-highlight);
+    0 0 20px var(--accent-glow);
 }
 
 .card-title {
@@ -201,6 +201,12 @@
   border-color: var(--border-strong);
 }
 
+.pill.gradient {
+  border-color: transparent;
+  background: linear-gradient(135deg, rgba(123, 47, 190, 0.2), rgba(0, 188, 212, 0.2));
+  backdrop-filter: blur(8px);
+}
+
 .pill.danger {
   border-color: var(--danger-subtle);
   background: var(--danger-subtle);
@@ -348,18 +354,18 @@
 }
 
 .btn.primary {
-  border-color: var(--accent);
-  background: var(--accent);
+  border-color: transparent;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
   color: var(--primary-foreground);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 .btn.primary:hover {
-  background: var(--accent-hover);
-  border-color: var(--accent-hover);
+  background: linear-gradient(135deg, var(--accent-hover), var(--accent-2));
+  border-color: transparent;
   box-shadow:
     var(--shadow-md),
-    0 0 20px var(--accent-glow);
+    0 0 24px var(--accent-glow);
 }
 
 /* Keyboard shortcut badge (shadcn style) */

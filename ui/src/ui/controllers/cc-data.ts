@@ -36,6 +36,7 @@ export type CCReferral = {
   reason?: string;
   artifact_ref?: string;
   created_at?: string;
+  ack_info?: Record<string, unknown> | null;
 };
 
 export type CCKbResult = {

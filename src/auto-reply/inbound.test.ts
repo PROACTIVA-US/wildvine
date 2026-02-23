@@ -315,7 +315,7 @@ describe("mention helpers", () => {
   });
 
   it("normalizes zero-width characters", () => {
-    expect(normalizeMentionText("open\u200bclaw")).toBe("wildvine");
+    expect(normalizeMentionText("wild\u200bvine")).toBe("wildvine");
   });
 
   it("matches patterns case-insensitively", () => {

@@ -66,7 +66,7 @@ export default {
       const output = callInjector(`--agent ${agentId} --trigger session_start --format markdown`);
 
       if (output) {
-        api.logger.debug(`veria-context: injected ${output.length} chars for ${agentId}`);
+        api.logger.debug?.(`veria-context: injected ${output.length} chars for ${agentId}`);
         return {
           prependContext: output,
         };
@@ -86,7 +86,9 @@ export default {
       );
 
       if (output) {
-        api.logger.debug(`veria-context: alignment check for ${toolName} (${output.length} chars)`);
+        api.logger.debug?.(
+          `veria-context: alignment check for ${toolName} (${output.length} chars)`,
+        );
       }
     });
   },

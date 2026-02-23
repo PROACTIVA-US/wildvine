@@ -1,3 +1,4 @@
+import react from "@vitejs/plugin-react";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite";
@@ -24,8 +25,9 @@ export default defineConfig(() => {
   return {
     base,
     publicDir: path.resolve(here, "public"),
+    plugins: [react()],
     optimizeDeps: {
-      include: ["lit/directives/repeat.js"],
+      include: ["lit/directives/repeat.js", "react", "react-dom"],
     },
     build: {
       outDir: path.resolve(here, "../dist/control-ui"),

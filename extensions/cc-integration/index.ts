@@ -9,8 +9,18 @@
  *   cc_skills_ingest
  * Gateway RPCs: cc.health, cc.kb.search, cc.knowledge.capture, cc.pipelines.list,
  *   cc.runs.create, cc.runs.get, cc.governor.pending, cc.governor.approve,
- *   cc.governor.deny, cc.arena.sessions, cc.arena.chat, cc.inbox.list, cc.inbox.ack,
- *   cc.vislzr.canvases, cc.vislzr.canvas, cc.skills.list, cc.skills.get,
+ *   cc.governor.deny, cc.governor.history, cc.arena.sessions, cc.arena.create,
+ *   cc.arena.chat, cc.inbox.list, cc.inbox.ack,
+ *   cc.vislzr.canvases, cc.vislzr.canvas, cc.vislzr.canvas.create,
+ *   cc.vislzr.canvas.update, cc.vislzr.canvas.delete,
+ *   cc.vislzr.node.create, cc.vislzr.node.update, cc.vislzr.node.bulk-update,
+ *   cc.vislzr.node.delete, cc.vislzr.edge.create, cc.vislzr.edge.update,
+ *   cc.vislzr.edge.delete, cc.vislzr.wander, cc.vislzr.generate-layout,
+ *   cc.idealzr.goals.list, cc.idealzr.goals.create, cc.idealzr.goals.update,
+ *   cc.idealzr.goals.delete, cc.idealzr.hypotheses.list, cc.idealzr.hypotheses.create,
+ *   cc.idealzr.hypotheses.update, cc.idealzr.hypotheses.delete,
+ *   cc.idealzr.evidence.list, cc.idealzr.evidence.create, cc.idealzr.evidence.update,
+ *   cc.idealzr.evidence.delete, cc.skills.list, cc.skills.get,
  *   cc.skills.resolve, cc.skills.ingest
  * Hooks: before_agent_start (notifies agents that CC tools are available),
  *   session_end (pushes session summary to CC KB)
@@ -32,6 +42,7 @@ import {
   ccGovernorPending,
   ccGovernorApprove,
   ccGovernorDeny,
+  ccGovernorHistory,
   // Arena
   ccArenaSessions,
   ccArenaCreateSession,
@@ -41,10 +52,36 @@ import {
   ccInboxList,
   ccInboxAck,
   ccInboxCounts,
-  // VISLZR
+  // VISLZR — read
   ccVislzrCanvases,
   ccVislzrCanvasGet,
   ccVislzrStats,
+  // VISLZR — write
+  ccVislzrCanvasCreate,
+  ccVislzrCanvasUpdate,
+  ccVislzrCanvasDelete,
+  ccVislzrNodeCreate,
+  ccVislzrNodeUpdate,
+  ccVislzrNodeBulkUpdate,
+  ccVislzrNodeDelete,
+  ccVislzrEdgeCreate,
+  ccVislzrEdgeUpdate,
+  ccVislzrEdgeDelete,
+  ccVislzrWander,
+  ccVislzrGenerateLayout,
+  // IDEALZR
+  ccIdealzrGoals,
+  ccIdealzrGoalCreate,
+  ccIdealzrGoalUpdate,
+  ccIdealzrGoalDelete,
+  ccIdealzrHypotheses,
+  ccIdealzrHypothesisCreate,
+  ccIdealzrHypothesisUpdate,
+  ccIdealzrHypothesisDelete,
+  ccIdealzrEvidence,
+  ccIdealzrEvidenceCreate,
+  ccIdealzrEvidenceUpdate,
+  ccIdealzrEvidenceDelete,
   // Skills
   ccSkillsList,
   ccSkillGet,
@@ -1148,6 +1185,597 @@ export default {
       } catch (err) {
         respond(false, {
           error: err instanceof Error ? err.message : "CC vislzr canvas get failed",
+        });
+      }
+    });
+
+    api.registerGatewayMethod("cc.vislzr.canvas.create", async ({ params, respond }) => {
+      const name = typeof params.name === "string" ? params.name.trim() : "";
+      if (!name) {
+        respond(false, { error: "name is required" });
+        return;
+      }
+      try {
+        const projectId = typeof params.project_id === "string" ? params.project_id : "default";
+        respond(
+          true,
+          await ccVislzrCanvasCreate(projectId, {
+            name,
+            description: typeof params.description === "string" ? params.description : undefined,
+          }),
+        );
+      } catch (err) {
+        respond(false, {
+          error: err instanceof Error ? err.message : "CC vislzr canvas create failed",
+        });
+      }
+    });
+
+    api.registerGatewayMethod("cc.vislzr.canvas.update", async ({ params, respond }) => {
+      const canvasId = typeof params.canvas_id === "string" ? params.canvas_id : "";
+      if (!canvasId) {
+        respond(false, { error: "canvas_id is required" });
+        return;
+      }
+      try {
+        const projectId = typeof params.project_id === "string" ? params.project_id : "default";
+        respond(
+          true,
+          await ccVislzrCanvasUpdate(canvasId, projectId, {
+            name: typeof params.name === "string" ? params.name : undefined,
+            description: typeof params.description === "string" ? params.description : undefined,
+          }),
+        );
+      } catch (err) {
+        respond(false, {
+          error: err instanceof Error ? err.message : "CC vislzr canvas update failed",
+        });
+      }
+    });
+
+    api.registerGatewayMethod("cc.vislzr.canvas.delete", async ({ params, respond }) => {
+      const canvasId = typeof params.canvas_id === "string" ? params.canvas_id : "";
+      if (!canvasId) {
+        respond(false, { error: "canvas_id is required" });
+        return;
+      }
+      try {
+        const projectId = typeof params.project_id === "string" ? params.project_id : "default";
+        respond(true, await ccVislzrCanvasDelete(canvasId, projectId));
+      } catch (err) {
+        respond(false, {
+          error: err instanceof Error ? err.message : "CC vislzr canvas delete failed",
+        });
+      }
+    });
+
+    api.registerGatewayMethod("cc.vislzr.node.create", async ({ params, respond }) => {
+      const canvasId = typeof params.canvas_id === "string" ? params.canvas_id : "";
+      const nodeType = typeof params.node_type === "string" ? params.node_type.trim() : "";
+      const label = typeof params.label === "string" ? params.label.trim() : "";
+      if (!canvasId || !nodeType || !label) {
+        respond(false, { error: "canvas_id, node_type, and label are required" });
+        return;
+      }
+      try {
+        const projectId = typeof params.project_id === "string" ? params.project_id : "default";
+        respond(
+          true,
+          await ccVislzrNodeCreate(canvasId, projectId, {
+            node_type: nodeType,
+            label,
+            position_x: typeof params.position_x === "number" ? params.position_x : undefined,
+            position_y: typeof params.position_y === "number" ? params.position_y : undefined,
+            data:
+              params.data && typeof params.data === "object"
+                ? (params.data as Record<string, unknown>)
+                : undefined,
+            linked_entity_type:
+              typeof params.linked_entity_type === "string" ? params.linked_entity_type : undefined,
+            linked_entity_id:
+              typeof params.linked_entity_id === "string" ? params.linked_entity_id : undefined,
+          }),
+        );
+      } catch (err) {
+        respond(false, {
+          error: err instanceof Error ? err.message : "CC vislzr node create failed",
+        });
+      }
+    });
+
+    api.registerGatewayMethod("cc.vislzr.node.update", async ({ params, respond }) => {
+      const canvasId = typeof params.canvas_id === "string" ? params.canvas_id : "";
+      const nodeId = typeof params.node_id === "string" ? params.node_id : "";
+      if (!canvasId || !nodeId) {
+        respond(false, { error: "canvas_id and node_id are required" });
+        return;
+      }
+      try {
+        const projectId = typeof params.project_id === "string" ? params.project_id : "default";
+        respond(
+          true,
+          await ccVislzrNodeUpdate(canvasId, nodeId, projectId, {
+            label: typeof params.label === "string" ? params.label : undefined,
+            position_x: typeof params.position_x === "number" ? params.position_x : undefined,
+            position_y: typeof params.position_y === "number" ? params.position_y : undefined,
+            data:
+              params.data && typeof params.data === "object"
+                ? (params.data as Record<string, unknown>)
+                : undefined,
+          }),
+        );
+      } catch (err) {
+        respond(false, {
+          error: err instanceof Error ? err.message : "CC vislzr node update failed",
+        });
+      }
+    });
+
+    api.registerGatewayMethod("cc.vislzr.node.bulk-update", async ({ params, respond }) => {
+      const canvasId = typeof params.canvas_id === "string" ? params.canvas_id : "";
+      if (!canvasId || !Array.isArray(params.updates)) {
+        respond(false, { error: "canvas_id and updates array are required" });
+        return;
+      }
+      try {
+        const projectId = typeof params.project_id === "string" ? params.project_id : "default";
+        respond(
+          true,
+          await ccVislzrNodeBulkUpdate(
+            canvasId,
+            projectId,
+            params.updates as {
+              id: string;
+              position_x?: number;
+              position_y?: number;
+              data?: Record<string, unknown>;
+            }[],
+          ),
+        );
+      } catch (err) {
+        respond(false, {
+          error: err instanceof Error ? err.message : "CC vislzr node bulk update failed",
+        });
+      }
+    });
+
+    api.registerGatewayMethod("cc.vislzr.node.delete", async ({ params, respond }) => {
+      const canvasId = typeof params.canvas_id === "string" ? params.canvas_id : "";
+      const nodeId = typeof params.node_id === "string" ? params.node_id : "";
+      if (!canvasId || !nodeId) {
+        respond(false, { error: "canvas_id and node_id are required" });
+        return;
+      }
+      try {
+        const projectId = typeof params.project_id === "string" ? params.project_id : "default";
+        respond(true, await ccVislzrNodeDelete(canvasId, nodeId, projectId));
+      } catch (err) {
+        respond(false, {
+          error: err instanceof Error ? err.message : "CC vislzr node delete failed",
+        });
+      }
+    });
+
+    api.registerGatewayMethod("cc.vislzr.edge.create", async ({ params, respond }) => {
+      const canvasId = typeof params.canvas_id === "string" ? params.canvas_id : "";
+      const sourceNodeId = typeof params.source_node_id === "string" ? params.source_node_id : "";
+      const targetNodeId = typeof params.target_node_id === "string" ? params.target_node_id : "";
+      const edgeType = typeof params.edge_type === "string" ? params.edge_type : "";
+      if (!canvasId || !sourceNodeId || !targetNodeId || !edgeType) {
+        respond(false, {
+          error: "canvas_id, source_node_id, target_node_id, and edge_type are required",
+        });
+        return;
+      }
+      try {
+        const projectId = typeof params.project_id === "string" ? params.project_id : "default";
+        respond(
+          true,
+          await ccVislzrEdgeCreate(canvasId, projectId, {
+            source_node_id: sourceNodeId,
+            target_node_id: targetNodeId,
+            edge_type: edgeType,
+            label: typeof params.label === "string" ? params.label : undefined,
+            weight: typeof params.weight === "number" ? params.weight : undefined,
+            data:
+              params.data && typeof params.data === "object"
+                ? (params.data as Record<string, unknown>)
+                : undefined,
+          }),
+        );
+      } catch (err) {
+        respond(false, {
+          error: err instanceof Error ? err.message : "CC vislzr edge create failed",
+        });
+      }
+    });
+
+    api.registerGatewayMethod("cc.vislzr.edge.update", async ({ params, respond }) => {
+      const canvasId = typeof params.canvas_id === "string" ? params.canvas_id : "";
+      const edgeId = typeof params.edge_id === "string" ? params.edge_id : "";
+      if (!canvasId || !edgeId) {
+        respond(false, { error: "canvas_id and edge_id are required" });
+        return;
+      }
+      try {
+        const projectId = typeof params.project_id === "string" ? params.project_id : "default";
+        respond(
+          true,
+          await ccVislzrEdgeUpdate(canvasId, edgeId, projectId, {
+            label: typeof params.label === "string" ? params.label : undefined,
+            weight: typeof params.weight === "number" ? params.weight : undefined,
+            data:
+              params.data && typeof params.data === "object"
+                ? (params.data as Record<string, unknown>)
+                : undefined,
+          }),
+        );
+      } catch (err) {
+        respond(false, {
+          error: err instanceof Error ? err.message : "CC vislzr edge update failed",
+        });
+      }
+    });
+
+    api.registerGatewayMethod("cc.vislzr.edge.delete", async ({ params, respond }) => {
+      const canvasId = typeof params.canvas_id === "string" ? params.canvas_id : "";
+      const edgeId = typeof params.edge_id === "string" ? params.edge_id : "";
+      if (!canvasId || !edgeId) {
+        respond(false, { error: "canvas_id and edge_id are required" });
+        return;
+      }
+      try {
+        const projectId = typeof params.project_id === "string" ? params.project_id : "default";
+        respond(true, await ccVislzrEdgeDelete(canvasId, edgeId, projectId));
+      } catch (err) {
+        respond(false, {
+          error: err instanceof Error ? err.message : "CC vislzr edge delete failed",
+        });
+      }
+    });
+
+    api.registerGatewayMethod("cc.vislzr.wander", async ({ params, respond }) => {
+      const canvasId = typeof params.canvas_id === "string" ? params.canvas_id : "";
+      const startNodeId = typeof params.start_node_id === "string" ? params.start_node_id : "";
+      if (!canvasId || !startNodeId) {
+        respond(false, { error: "canvas_id and start_node_id are required" });
+        return;
+      }
+      try {
+        const projectId = typeof params.project_id === "string" ? params.project_id : "default";
+        respond(
+          true,
+          await ccVislzrWander(canvasId, projectId, startNodeId, {
+            depth: typeof params.depth === "number" ? params.depth : undefined,
+            edge_types: Array.isArray(params.edge_types)
+              ? (params.edge_types as string[])
+              : undefined,
+          }),
+        );
+      } catch (err) {
+        respond(false, { error: err instanceof Error ? err.message : "CC vislzr wander failed" });
+      }
+    });
+
+    api.registerGatewayMethod("cc.vislzr.generate-layout", async ({ params, respond }) => {
+      const canvasId = typeof params.canvas_id === "string" ? params.canvas_id : "";
+      if (!canvasId) {
+        respond(false, { error: "canvas_id is required" });
+        return;
+      }
+      try {
+        const projectId = typeof params.project_id === "string" ? params.project_id : "default";
+        respond(
+          true,
+          await ccVislzrGenerateLayout(canvasId, projectId, {
+            algorithm: typeof params.algorithm === "string" ? params.algorithm : undefined,
+          }),
+        );
+      } catch (err) {
+        respond(false, {
+          error: err instanceof Error ? err.message : "CC vislzr generate layout failed",
+        });
+      }
+    });
+
+    // ── IDEALZR RPCs ────────────────────────────────────────
+
+    api.registerGatewayMethod("cc.idealzr.goals.list", async ({ params, respond }) => {
+      try {
+        const projectId = typeof params.project_id === "string" ? params.project_id : "default";
+        respond(
+          true,
+          await ccIdealzrGoals(projectId, {
+            state: typeof params.state === "string" ? params.state : undefined,
+            limit: typeof params.limit === "number" ? params.limit : undefined,
+          }),
+        );
+      } catch (err) {
+        respond(false, {
+          error: err instanceof Error ? err.message : "CC idealzr goals list failed",
+        });
+      }
+    });
+
+    api.registerGatewayMethod("cc.idealzr.goals.create", async ({ params, respond }) => {
+      const title = typeof params.title === "string" ? params.title.trim() : "";
+      if (!title) {
+        respond(false, { error: "title is required" });
+        return;
+      }
+      try {
+        const projectId = typeof params.project_id === "string" ? params.project_id : "default";
+        respond(
+          true,
+          await ccIdealzrGoalCreate(projectId, {
+            title,
+            description: typeof params.description === "string" ? params.description : undefined,
+            state: typeof params.state === "string" ? params.state : undefined,
+            progress: typeof params.progress === "number" ? params.progress : undefined,
+            canvas_id: typeof params.canvas_id === "string" ? params.canvas_id : undefined,
+          }),
+        );
+      } catch (err) {
+        respond(false, {
+          error: err instanceof Error ? err.message : "CC idealzr goal create failed",
+        });
+      }
+    });
+
+    api.registerGatewayMethod("cc.idealzr.goals.update", async ({ params, respond }) => {
+      const goalId = typeof params.goal_id === "string" ? params.goal_id : "";
+      if (!goalId) {
+        respond(false, { error: "goal_id is required" });
+        return;
+      }
+      try {
+        const projectId = typeof params.project_id === "string" ? params.project_id : "default";
+        respond(
+          true,
+          await ccIdealzrGoalUpdate(goalId, projectId, {
+            title: typeof params.title === "string" ? params.title : undefined,
+            description: typeof params.description === "string" ? params.description : undefined,
+            state: typeof params.state === "string" ? params.state : undefined,
+            progress: typeof params.progress === "number" ? params.progress : undefined,
+            canvas_id: typeof params.canvas_id === "string" ? params.canvas_id : undefined,
+          }),
+        );
+      } catch (err) {
+        respond(false, {
+          error: err instanceof Error ? err.message : "CC idealzr goal update failed",
+        });
+      }
+    });
+
+    api.registerGatewayMethod("cc.idealzr.goals.delete", async ({ params, respond }) => {
+      const goalId = typeof params.goal_id === "string" ? params.goal_id : "";
+      if (!goalId) {
+        respond(false, { error: "goal_id is required" });
+        return;
+      }
+      try {
+        const projectId = typeof params.project_id === "string" ? params.project_id : "default";
+        respond(true, await ccIdealzrGoalDelete(goalId, projectId));
+      } catch (err) {
+        respond(false, {
+          error: err instanceof Error ? err.message : "CC idealzr goal delete failed",
+        });
+      }
+    });
+
+    api.registerGatewayMethod("cc.idealzr.hypotheses.list", async ({ params, respond }) => {
+      try {
+        const projectId = typeof params.project_id === "string" ? params.project_id : "default";
+        respond(
+          true,
+          await ccIdealzrHypotheses(projectId, {
+            goal_id: typeof params.goal_id === "string" ? params.goal_id : undefined,
+            state: typeof params.state === "string" ? params.state : undefined,
+            limit: typeof params.limit === "number" ? params.limit : undefined,
+          }),
+        );
+      } catch (err) {
+        respond(false, {
+          error: err instanceof Error ? err.message : "CC idealzr hypotheses list failed",
+        });
+      }
+    });
+
+    api.registerGatewayMethod("cc.idealzr.hypotheses.create", async ({ params, respond }) => {
+      const goalId = typeof params.goal_id === "string" ? params.goal_id : "";
+      const title = typeof params.title === "string" ? params.title.trim() : "";
+      if (!goalId || !title) {
+        respond(false, { error: "goal_id and title are required" });
+        return;
+      }
+      try {
+        const projectId = typeof params.project_id === "string" ? params.project_id : "default";
+        respond(
+          true,
+          await ccIdealzrHypothesisCreate(projectId, {
+            goal_id: goalId,
+            title,
+            description: typeof params.description === "string" ? params.description : undefined,
+            state: typeof params.state === "string" ? params.state : undefined,
+            confidence: typeof params.confidence === "number" ? params.confidence : undefined,
+          }),
+        );
+      } catch (err) {
+        respond(false, {
+          error: err instanceof Error ? err.message : "CC idealzr hypothesis create failed",
+        });
+      }
+    });
+
+    api.registerGatewayMethod("cc.idealzr.hypotheses.update", async ({ params, respond }) => {
+      const hypothesisId = typeof params.hypothesis_id === "string" ? params.hypothesis_id : "";
+      if (!hypothesisId) {
+        respond(false, { error: "hypothesis_id is required" });
+        return;
+      }
+      try {
+        const projectId = typeof params.project_id === "string" ? params.project_id : "default";
+        respond(
+          true,
+          await ccIdealzrHypothesisUpdate(hypothesisId, projectId, {
+            title: typeof params.title === "string" ? params.title : undefined,
+            description: typeof params.description === "string" ? params.description : undefined,
+            state: typeof params.state === "string" ? params.state : undefined,
+            confidence: typeof params.confidence === "number" ? params.confidence : undefined,
+          }),
+        );
+      } catch (err) {
+        respond(false, {
+          error: err instanceof Error ? err.message : "CC idealzr hypothesis update failed",
+        });
+      }
+    });
+
+    api.registerGatewayMethod("cc.idealzr.hypotheses.delete", async ({ params, respond }) => {
+      const hypothesisId = typeof params.hypothesis_id === "string" ? params.hypothesis_id : "";
+      if (!hypothesisId) {
+        respond(false, { error: "hypothesis_id is required" });
+        return;
+      }
+      try {
+        const projectId = typeof params.project_id === "string" ? params.project_id : "default";
+        respond(true, await ccIdealzrHypothesisDelete(hypothesisId, projectId));
+      } catch (err) {
+        respond(false, {
+          error: err instanceof Error ? err.message : "CC idealzr hypothesis delete failed",
+        });
+      }
+    });
+
+    api.registerGatewayMethod("cc.idealzr.evidence.list", async ({ params, respond }) => {
+      try {
+        const projectId = typeof params.project_id === "string" ? params.project_id : "default";
+        respond(
+          true,
+          await ccIdealzrEvidence(projectId, {
+            hypothesis_id:
+              typeof params.hypothesis_id === "string" ? params.hypothesis_id : undefined,
+            kind: typeof params.kind === "string" ? params.kind : undefined,
+            limit: typeof params.limit === "number" ? params.limit : undefined,
+          }),
+        );
+      } catch (err) {
+        respond(false, {
+          error: err instanceof Error ? err.message : "CC idealzr evidence list failed",
+        });
+      }
+    });
+
+    api.registerGatewayMethod("cc.idealzr.evidence.create", async ({ params, respond }) => {
+      const hypothesisId = typeof params.hypothesis_id === "string" ? params.hypothesis_id : "";
+      const title = typeof params.title === "string" ? params.title.trim() : "";
+      if (!hypothesisId || !title) {
+        respond(false, { error: "hypothesis_id and title are required" });
+        return;
+      }
+      try {
+        const projectId = typeof params.project_id === "string" ? params.project_id : "default";
+        respond(
+          true,
+          await ccIdealzrEvidenceCreate(projectId, {
+            hypothesis_id: hypothesisId,
+            title,
+            description: typeof params.description === "string" ? params.description : undefined,
+            kind: typeof params.kind === "string" ? params.kind : undefined,
+            source: typeof params.source === "string" ? params.source : undefined,
+          }),
+        );
+      } catch (err) {
+        respond(false, {
+          error: err instanceof Error ? err.message : "CC idealzr evidence create failed",
+        });
+      }
+    });
+
+    api.registerGatewayMethod("cc.idealzr.evidence.update", async ({ params, respond }) => {
+      const evidenceId = typeof params.evidence_id === "string" ? params.evidence_id : "";
+      if (!evidenceId) {
+        respond(false, { error: "evidence_id is required" });
+        return;
+      }
+      try {
+        const projectId = typeof params.project_id === "string" ? params.project_id : "default";
+        respond(
+          true,
+          await ccIdealzrEvidenceUpdate(evidenceId, projectId, {
+            title: typeof params.title === "string" ? params.title : undefined,
+            description: typeof params.description === "string" ? params.description : undefined,
+            kind: typeof params.kind === "string" ? params.kind : undefined,
+            source: typeof params.source === "string" ? params.source : undefined,
+          }),
+        );
+      } catch (err) {
+        respond(false, {
+          error: err instanceof Error ? err.message : "CC idealzr evidence update failed",
+        });
+      }
+    });
+
+    api.registerGatewayMethod("cc.idealzr.evidence.delete", async ({ params, respond }) => {
+      const evidenceId = typeof params.evidence_id === "string" ? params.evidence_id : "";
+      if (!evidenceId) {
+        respond(false, { error: "evidence_id is required" });
+        return;
+      }
+      try {
+        const projectId = typeof params.project_id === "string" ? params.project_id : "default";
+        respond(true, await ccIdealzrEvidenceDelete(evidenceId, projectId));
+      } catch (err) {
+        respond(false, {
+          error: err instanceof Error ? err.message : "CC idealzr evidence delete failed",
+        });
+      }
+    });
+
+    // ── Arena Create RPC ────────────────────────────────────
+
+    api.registerGatewayMethod("cc.arena.create", async ({ params, respond }) => {
+      const name = typeof params.name === "string" ? params.name.trim() : "";
+      if (!name) {
+        respond(false, { error: "name is required" });
+        return;
+      }
+      if (!Array.isArray(params.agents) || params.agents.length === 0) {
+        respond(false, { error: "agents array is required and must not be empty" });
+        return;
+      }
+      try {
+        const projectId = typeof params.project_id === "string" ? params.project_id : "default";
+        respond(
+          true,
+          await ccArenaCreateSession(projectId, {
+            name,
+            description: typeof params.description === "string" ? params.description : undefined,
+            mode: typeof params.mode === "string" ? params.mode : undefined,
+            agents: params.agents as {
+              display_name: string;
+              model: string;
+              archetype?: string;
+              temperature?: number;
+            }[],
+            context: typeof params.context === "string" ? params.context : undefined,
+          }),
+        );
+      } catch (err) {
+        respond(false, { error: err instanceof Error ? err.message : "CC arena create failed" });
+      }
+    });
+
+    // ── Governor History RPC ────────────────────────────────
+
+    api.registerGatewayMethod("cc.governor.history", async ({ params, respond }) => {
+      try {
+        const instance = typeof params.instance === "string" ? params.instance : "hub";
+        const limit = typeof params.limit === "number" ? params.limit : undefined;
+        respond(true, await ccGovernorHistory(instance, limit));
+      } catch (err) {
+        respond(false, {
+          error: err instanceof Error ? err.message : "CC governor history failed",
         });
       }
     });

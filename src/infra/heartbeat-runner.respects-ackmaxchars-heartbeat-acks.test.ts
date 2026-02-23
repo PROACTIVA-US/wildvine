@@ -131,7 +131,10 @@ describe("resolveHeartbeatIntervalMs", () => {
         },
       });
 
-      expect(sendWhatsApp).toHaveBeenCalled();
+      // With ackMaxChars: 0 and a pure HEARTBEAT_OK reply, the token is stripped
+      // entirely (no ack text allowed) and showOk defaults to false, so nothing
+      // is delivered to WhatsApp.
+      expect(sendWhatsApp).not.toHaveBeenCalled();
     } finally {
       replySpy.mockRestore();
       await fs.rm(tmpDir, { recursive: true, force: true });

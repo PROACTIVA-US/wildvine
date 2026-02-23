@@ -112,12 +112,10 @@ describe("runCronIsolatedAgentTurn", () => {
         lane: "cron",
       });
 
+      // Pure HEARTBEAT_OK with no remaining text is always skipped,
+      // regardless of ackMaxChars. The announce flow is not invoked.
       expect(keepRes.status).toBe("ok");
-      expect(runSubagentAnnounceFlow).toHaveBeenCalledTimes(1);
-      const keepArgs = vi.mocked(runSubagentAnnounceFlow).mock.calls[0]?.[0] as
-        | { cleanup?: "keep" | "delete" }
-        | undefined;
-      expect(keepArgs?.cleanup).toBe("keep");
+      expect(runSubagentAnnounceFlow).not.toHaveBeenCalled();
       expect(deps.sendMessageTelegram).not.toHaveBeenCalled();
 
       vi.mocked(runSubagentAnnounceFlow).mockClear();
@@ -138,12 +136,9 @@ describe("runCronIsolatedAgentTurn", () => {
         lane: "cron",
       });
 
+      // Same for deleteAfterRun — pure HEARTBEAT_OK is still skipped.
       expect(deleteRes.status).toBe("ok");
-      expect(runSubagentAnnounceFlow).toHaveBeenCalledTimes(1);
-      const deleteArgs = vi.mocked(runSubagentAnnounceFlow).mock.calls[0]?.[0] as
-        | { cleanup?: "keep" | "delete" }
-        | undefined;
-      expect(deleteArgs?.cleanup).toBe("delete");
+      expect(runSubagentAnnounceFlow).not.toHaveBeenCalled();
       expect(deps.sendMessageTelegram).not.toHaveBeenCalled();
     });
   });

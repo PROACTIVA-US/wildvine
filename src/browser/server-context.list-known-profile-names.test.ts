@@ -33,8 +33,8 @@ describe("browser server-context listKnownProfileNames", () => {
 
     expect(listKnownProfileNames(state).toSorted()).toEqual([
       "chrome",
-      "wildvine",
       "stale-removed",
+      "wildvine",
     ]);
   });
 });

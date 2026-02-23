@@ -171,6 +171,43 @@ export async function createGatewayRuntimeState(params: {
     noServer: true,
     maxPayload: MAX_PAYLOAD_BYTES,
   });
+  // Build voice WebSocket upgrade handler — always register so /voice connects cleanly.
+  // Deepgram key check happens when user sends {"type":"start"}, not at registration time.
+  const voiceBridgeConfig = (params.cfg.plugins as Record<string, unknown> | undefined)?.[
+    "voice-bridge"
+  ] as Record<string, unknown> | undefined;
+  const deepgramApiKey =
+    (voiceBridgeConfig?.deepgramApiKey as string) ??
+    (voiceBridgeConfig?.deepgram_api_key as string) ??
+    process.env.DEEPGRAM_API_KEY ??
+    "";
+  const { handleVoiceUpgrade } = await import("./voice-ws.js");
+  const voiceWsConfig = {
+    deepgramApiKey,
+    deepgramModel: (voiceBridgeConfig?.deepgramModel as string) ?? "nova-3",
+    ttsProvider: ((voiceBridgeConfig?.ttsProvider as string) ??
+      "chatterbox") as import("../../extensions/voice-bridge/tts-bridge.js").TtsProvider,
+    tts: voiceBridgeConfig?.tts as Record<string, unknown> | undefined,
+    agentId: (voiceBridgeConfig?.agentId as string) ?? undefined,
+    sessionKeyPrefix: (voiceBridgeConfig?.sessionKeyPrefix as string) ?? "voice",
+    logger: {
+      info: (msg: string) => params.log.info(`voice-ws: ${msg}`),
+      warn: (msg: string) => params.log.warn(`voice-ws: ${msg}`),
+      error: (msg: string) => params.log.info(`voice-ws: ERROR ${msg}`),
+    },
+  };
+  const onVoiceUpgrade = (
+    req: import("node:http").IncomingMessage,
+    socket: import("node:stream").Duplex,
+    head: Buffer,
+  ) =>
+    handleVoiceUpgrade(
+      req,
+      socket,
+      head,
+      voiceWsConfig as Parameters<typeof handleVoiceUpgrade>[3],
+    );
+
   for (const server of httpServers) {
     attachGatewayUpgradeHandler({
       httpServer: server,
@@ -179,6 +216,7 @@ export async function createGatewayRuntimeState(params: {
       clients,
       resolvedAuth: params.resolvedAuth,
       rateLimiter: params.rateLimiter,
+      onVoiceUpgrade,
     });
   }
 

@@ -1,0 +1,129 @@
+{
+  "id": "voice-bridge",
+  "name": "Voice Bridge",
+  "description": "Persistent voice interface — Deepgram STT, agent routing, multi-provider TTS",
+  "uiHints": {
+    "enabled": {
+      "label": "Enabled"
+    },
+    "deepgramApiKey": {
+      "label": "Deepgram API Key",
+      "sensitive": true,
+      "help": "Falls back to DEEPGRAM_API_KEY env var"
+    },
+    "deepgramModel": {
+      "label": "Deepgram Model",
+      "help": "STT model (default: nova-3)"
+    },
+    "ttsProvider": {
+      "label": "TTS Provider",
+      "help": "openai, elevenlabs, or chatterbox"
+    },
+    "agentId": {
+      "label": "Agent ID",
+      "help": "Agent to route voice commands to (default: default agent)"
+    },
+    "sessionKeyPrefix": {
+      "label": "Session Key Prefix",
+      "help": "Prefix for voice session keys (default: voice)"
+    },
+    "tts.openai.apiKey": {
+      "label": "OpenAI TTS API Key",
+      "sensitive": true,
+      "advanced": true
+    },
+    "tts.openai.model": {
+      "label": "OpenAI TTS Model",
+      "advanced": true
+    },
+    "tts.openai.voice": {
+      "label": "OpenAI TTS Voice",
+      "advanced": true
+    },
+    "tts.elevenlabs.apiKey": {
+      "label": "ElevenLabs API Key",
+      "sensitive": true,
+      "advanced": true
+    },
+    "tts.elevenlabs.voiceId": {
+      "label": "ElevenLabs Voice ID",
+      "advanced": true
+    },
+    "tts.elevenlabs.modelId": {
+      "label": "ElevenLabs Model ID",
+      "advanced": true
+    },
+    "tts.chatterbox.baseUrl": {
+      "label": "Chatterbox URL",
+      "advanced": true,
+      "help": "Default: http://127.0.0.1:8004/v1"
+    },
+    "tts.chatterbox.voice": {
+      "label": "Chatterbox Voice",
+      "advanced": true
+    }
+  },
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "enabled": {
+        "type": "boolean"
+      },
+      "deepgramApiKey": {
+        "type": "string"
+      },
+      "deepgramModel": {
+        "type": "string"
+      },
+      "ttsProvider": {
+        "type": "string",
+        "enum": ["openai", "elevenlabs", "chatterbox"]
+      },
+      "agentId": {
+        "type": "string"
+      },
+      "sessionKeyPrefix": {
+        "type": "string"
+      },
+      "timeoutMs": {
+        "type": "integer",
+        "minimum": 1000,
+        "maximum": 120000
+      },
+      "tts": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "openai": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "apiKey": { "type": "string" },
+              "model": { "type": "string" },
+              "voice": { "type": "string" }
+            }
+          },
+          "elevenlabs": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "apiKey": { "type": "string" },
+              "voiceId": { "type": "string" },
+              "modelId": { "type": "string" }
+            }
+          },
+          "chatterbox": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "baseUrl": { "type": "string" },
+              "model": { "type": "string" },
+              "voice": { "type": "string" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

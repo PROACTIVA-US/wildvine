@@ -1,4 +1,4 @@
-import { html, nothing } from "lit";
+import { html } from "lit";
 import type { CCArenaSession, CCArenaMessage } from "../controllers/cc-data.ts";
 
 export type CcArenaProps = {
