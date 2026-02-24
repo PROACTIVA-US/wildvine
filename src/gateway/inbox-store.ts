@@ -94,7 +94,7 @@ export function listItems(
   const inst = instance ?? "default";
   const lim = opts?.limit ?? 50;
   let where = "instance = ?";
-  const binds: unknown[] = [inst];
+  const binds: (string | number)[] = [inst];
   if (opts?.unread_only) {
     where += " AND status = 'unread'";
   }

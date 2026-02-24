@@ -278,7 +278,7 @@ export function scanDirectory(
 
       // Extract description from first paragraph or frontmatter
       const descMatch = content.match(/^#\s+.+\n+(.+)/m) ?? content.match(/description:\s*(.+)/i);
-      const description = descMatch?.[1]?.trim() ?? null;
+      const description = descMatch?.[1]?.trim();
 
       // Extract keywords
       const kwMatch = content.match(/keywords?:\s*\[?([^\]\n]+)/i);

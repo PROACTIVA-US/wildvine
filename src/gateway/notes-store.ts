@@ -63,7 +63,7 @@ export function listNotes(opts?: { status?: string; priority?: string; limit?: n
   const lim = opts?.limit ?? 50;
   let sql = "SELECT * FROM notes";
   const conditions: string[] = [];
-  const binds: unknown[] = [];
+  const binds: (string | number)[] = [];
   if (opts?.status) {
     conditions.push("status = ?");
     binds.push(opts.status);

@@ -186,7 +186,7 @@ export function updateGoal(
       goalId,
       pid,
     );
-  return db().prepare(`SELECT * FROM goals WHERE id = ?`).get(goalId) as Goal;
+  return db().prepare(`SELECT * FROM goals WHERE id = ?`).get(goalId) as unknown as Goal;
 }
 
 export function deleteGoal(goalId: string, projectId?: string): boolean {
@@ -307,7 +307,9 @@ export function updateHypothesis(
       hypothesisId,
       pid,
     );
-  return db().prepare(`SELECT * FROM hypotheses WHERE id = ?`).get(hypothesisId) as Hypothesis;
+  return db()
+    .prepare(`SELECT * FROM hypotheses WHERE id = ?`)
+    .get(hypothesisId) as unknown as Hypothesis;
 }
 
 export function deleteHypothesis(hypothesisId: string, projectId?: string): boolean {
@@ -427,7 +429,7 @@ export function updateEvidence(
       evidenceId,
       pid,
     );
-  return db().prepare(`SELECT * FROM evidence WHERE id = ?`).get(evidenceId) as Evidence;
+  return db().prepare(`SELECT * FROM evidence WHERE id = ?`).get(evidenceId) as unknown as Evidence;
 }
 
 export function deleteEvidence(evidenceId: string, projectId?: string): boolean {

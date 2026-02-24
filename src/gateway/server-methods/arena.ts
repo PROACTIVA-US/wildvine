@@ -89,22 +89,8 @@ export const arenaHandlers: GatewayRequestHandlers = {
           const agents: string[] = JSON.parse(session.agents);
           const targetAgent = (params.target_agent as string) ?? agents[0] ?? "assistant";
 
-          // Build conversation context from recent messages
-          const history = arena.listMessages(sessionId, { limit: 20 });
-          const contextMessages = history.map((m) => ({
-            role: m.role === "user" ? "user" : "assistant",
-            content: `[${m.sender}]: ${m.content}`,
-          }));
-
-          // Use model catalog if available
-          const modelCatalog = await params._context?.loadGatewayModelCatalog?.();
-          if (modelCatalog && modelCatalog.length > 0) {
-            // For now, return the user message — AI response generation
-            // will be added when model invocation is wired up
-            void contextMessages;
-          }
-
           // Add a placeholder assistant response
+          // TODO: wire up model catalog for AI-generated arena responses
           const assistantMsg = arena.addMessage(sessionId, {
             sender: targetAgent,
             role: "assistant",

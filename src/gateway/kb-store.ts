@@ -141,7 +141,7 @@ export function search(
       FROM kb_fts f
       JOIN kb_documents d ON d.rowid = f.rowid
       WHERE kb_fts MATCH ? AND d.project_id = ?`;
-    const binds: unknown[] = [ftsQuery, pid];
+    const binds: (string | number)[] = [ftsQuery, pid];
 
     if (opts?.entity_types?.length) {
       const placeholders = opts.entity_types.map(() => "?").join(",");
@@ -216,7 +216,7 @@ export function search(
 export function clearIndex(projectId?: string): { deleted: number } {
   const pid = projectId ?? "default";
   const result = db().prepare(`DELETE FROM kb_documents WHERE project_id = ?`).run(pid);
-  return { deleted: result.changes };
+  return { deleted: Number(result.changes) };
 }
 
 export function getIndexStatus(projectId?: string): {
