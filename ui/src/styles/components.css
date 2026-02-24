@@ -203,7 +203,7 @@
 
 .pill.gradient {
   border-color: transparent;
-  background: linear-gradient(135deg, rgba(123, 47, 190, 0.2), rgba(0, 188, 212, 0.2));
+  background: rgba(99, 102, 241, 0.12);
   backdrop-filter: blur(8px);
 }
 
@@ -355,13 +355,13 @@
 
 .btn.primary {
   border-color: transparent;
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  background: var(--accent);
   color: var(--primary-foreground);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 .btn.primary:hover {
-  background: linear-gradient(135deg, var(--accent-hover), var(--accent-2));
+  background: var(--accent-hover);
   border-color: transparent;
   box-shadow:
     var(--shadow-md),

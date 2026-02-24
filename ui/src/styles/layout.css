@@ -429,7 +429,8 @@
   color: var(--text-strong);
   background: var(--accent-subtle);
   border-left: 3px solid;
-  border-image: linear-gradient(180deg, var(--accent), var(--accent-2)) 1;
+  border-left-color: var(--accent);
+  border-image: none;
   padding-left: 7px;
 }
 
@@ -450,7 +451,7 @@
   font-weight: 700;
   line-height: 1;
   border-radius: var(--radius-full);
-  background: linear-gradient(135deg, var(--accent), var(--accent-2, var(--accent)));
+  background: var(--accent);
   color: #fff;
 }
 

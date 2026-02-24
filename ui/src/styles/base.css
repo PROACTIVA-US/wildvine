@@ -1,58 +1,58 @@
 @import url("https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap");
 
 :root {
-  /* Background - Deep cyberpunk dark */
-  --bg: #0a0a1a;
-  --bg-accent: #0d0d24;
-  --bg-elevated: #12122a;
-  --bg-hover: #1a1a3a;
-  --bg-muted: #1a1a3a;
+  /* Background - Clean dark */
+  --bg: #0a0b0d;
+  --bg-accent: #0e1015;
+  --bg-elevated: #12141a;
+  --bg-hover: #1a1c24;
+  --bg-muted: #1a1c24;
 
   /* Card / Surface */
-  --card: #0d0d24;
-  --card-foreground: #ededed;
+  --card: #12141a;
+  --card-foreground: #e5e5e5;
   --card-highlight: rgba(255, 255, 255, 0.03);
-  --popover: #12122a;
-  --popover-foreground: #ededed;
+  --popover: #12141a;
+  --popover-foreground: #e5e5e5;
 
   /* Panel */
-  --panel: #0a0a1a;
-  --panel-strong: #12122a;
-  --panel-hover: #1a1a3a;
-  --chrome: rgba(10, 10, 26, 0.85);
-  --chrome-strong: rgba(10, 10, 26, 0.95);
+  --panel: #0a0b0d;
+  --panel-strong: #12141a;
+  --panel-hover: #1a1c24;
+  --chrome: rgba(10, 11, 13, 0.85);
+  --chrome-strong: rgba(10, 11, 13, 0.95);
 
   /* Text */
-  --text: #ededed;
+  --text: #e5e5e5;
   --text-strong: #ffffff;
-  --chat-text: #ededed;
-  --muted: rgba(255, 255, 255, 0.45);
-  --muted-strong: rgba(255, 255, 255, 0.3);
-  --muted-foreground: rgba(255, 255, 255, 0.45);
+  --chat-text: #e5e5e5;
+  --muted: #8b8d98;
+  --muted-strong: #6b6d78;
+  --muted-foreground: #8b8d98;
 
   /* Border */
-  --border: rgba(255, 255, 255, 0.06);
-  --border-strong: rgba(255, 255, 255, 0.12);
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.14);
   --border-hover: rgba(255, 255, 255, 0.2);
   --input: rgba(255, 255, 255, 0.08);
-  --ring: #7b2fbe;
+  --ring: #6366f1;
 
-  /* Accent - Purple to Cyan gradient system */
-  --accent: #7b2fbe;
-  --accent-hover: #8b3fd0;
-  --accent-muted: #7b2fbe;
-  --accent-subtle: rgba(123, 47, 190, 0.15);
+  /* Accent - Indigo */
+  --accent: #6366f1;
+  --accent-hover: #818cf8;
+  --accent-muted: #6366f1;
+  --accent-subtle: rgba(99, 102, 241, 0.15);
   --accent-foreground: #ffffff;
-  --accent-glow: rgba(123, 47, 190, 0.3);
-  --primary: #7b2fbe;
+  --accent-glow: rgba(99, 102, 241, 0.25);
+  --primary: #6366f1;
   --primary-foreground: #ffffff;
 
-  /* Secondary accent (Cyan) */
-  --secondary: #0d0d24;
-  --secondary-foreground: #ededed;
-  --accent-2: #00bcd4;
-  --accent-2-muted: rgba(0, 188, 212, 0.7);
-  --accent-2-subtle: rgba(0, 188, 212, 0.15);
+  /* Secondary */
+  --secondary: #12141a;
+  --secondary-foreground: #e5e5e5;
+  --accent-2: #6366f1;
+  --accent-2-muted: rgba(99, 102, 241, 0.7);
+  --accent-2-subtle: rgba(99, 102, 241, 0.15);
 
   /* Semantic */
   --ok: #22c55e;
@@ -69,7 +69,7 @@
   --info: #3b82f6;
 
   /* Focus */
-  --focus: rgba(123, 47, 190, 0.25);
+  --focus: rgba(99, 102, 241, 0.25);
   --focus-ring: 0 0 0 2px var(--bg), 0 0 0 4px var(--ring);
   --focus-glow: 0 0 0 2px var(--bg), 0 0 0 4px var(--ring), 0 0 20px var(--accent-glow);
 
@@ -145,20 +145,20 @@
   --border-hover: #a1a1aa;
   --input: #e4e4e7;
 
-  --accent: #6b21a8;
-  --accent-hover: #7b2fbe;
-  --accent-muted: #6b21a8;
-  --accent-subtle: rgba(107, 33, 168, 0.12);
+  --accent: #4f46e5;
+  --accent-hover: #6366f1;
+  --accent-muted: #4f46e5;
+  --accent-subtle: rgba(79, 70, 229, 0.12);
   --accent-foreground: #ffffff;
-  --accent-glow: rgba(107, 33, 168, 0.15);
-  --primary: #6b21a8;
+  --accent-glow: rgba(79, 70, 229, 0.15);
+  --primary: #4f46e5;
   --primary-foreground: #ffffff;
 
   --secondary: #f4f4f5;
   --secondary-foreground: #3f3f46;
-  --accent-2: #0d9488;
-  --accent-2-muted: rgba(13, 148, 136, 0.75);
-  --accent-2-subtle: rgba(13, 148, 136, 0.12);
+  --accent-2: #4f46e5;
+  --accent-2-muted: rgba(79, 70, 229, 0.75);
+  --accent-2-subtle: rgba(79, 70, 229, 0.12);
 
   --ok: #16a34a;
   --ok-muted: rgba(22, 163, 74, 0.75);
@@ -173,7 +173,7 @@
   --danger-subtle: rgba(220, 38, 38, 0.1);
   --info: #2563eb;
 
-  --focus: rgba(10, 158, 158, 0.2);
+  --focus: rgba(79, 70, 229, 0.2);
   --focus-glow: 0 0 0 2px var(--bg), 0 0 0 4px var(--ring), 0 0 16px var(--accent-glow);
 
   --grid-line: rgba(0, 0, 0, 0.05);
@@ -353,7 +353,7 @@ select {
 @keyframes glow-pulse {
   0%,
   100% {
-    box-shadow: 0 0 0 rgba(123, 47, 190, 0);
+    box-shadow: 0 0 0 rgba(99, 102, 241, 0);
   }
   50% {
     box-shadow: 0 0 20px var(--accent-glow);
@@ -363,7 +363,7 @@ select {
 @keyframes glow-ring {
   0%,
   100% {
-    box-shadow: 0 0 0 rgba(123, 47, 190, 0);
+    box-shadow: 0 0 0 rgba(99, 102, 241, 0);
   }
   50% {
     box-shadow: 0 0 24px var(--accent-glow);

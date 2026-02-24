@@ -28,8 +28,8 @@ export interface VislzrCanvasProps {
 }
 
 const NODE_COLORS: Record<string, string> = {
-  GOAL: "#7B2FBE",
-  HYPOTHESIS: "#00BCD4",
+  GOAL: "#6366f1",
+  HYPOTHESIS: "#818cf8",
   EVIDENCE: "#10B981",
   NOTE: "#F59E0B",
   TASK: "#EF4444",
@@ -39,9 +39,9 @@ const NODE_COLORS: Record<string, string> = {
 const EDGE_STYLES: Record<string, { stroke: string; dash?: string; width: number }> = {
   SUPPORTS: { stroke: "#10B981", width: 2 },
   CONTRADICTS: { stroke: "#EF4444", width: 2 },
-  DEPENDENCY: { stroke: "#00BCD4", dash: "6,3", width: 1.5 },
+  DEPENDENCY: { stroke: "#818cf8", dash: "6,3", width: 1.5 },
   RELATES: { stroke: "rgba(255,255,255,0.2)", dash: "3,3", width: 1 },
-  PARENT: { stroke: "#7B2FBE", width: 3 },
+  PARENT: { stroke: "#6366f1", width: 3 },
 };
 
 export function VislzrCanvas({
@@ -159,7 +159,7 @@ export function VislzrCanvas({
         width: "100%",
         height: "100%",
         position: "relative",
-        background: "#0A0A1A",
+        background: "#0a0b0d",
         borderRadius: 12,
         overflow: "hidden",
         border: "1px solid rgba(255,255,255,0.06)",
@@ -174,7 +174,7 @@ export function VislzrCanvas({
               padding: "6px 12px",
               fontSize: 12,
               fontWeight: 600,
-              background: "linear-gradient(135deg, #7B2FBE, #00BCD4)",
+              background: "#6366f1",
               color: "#fff",
               border: "none",
               borderRadius: 6,

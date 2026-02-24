@@ -22,6 +22,7 @@ import { talkHandlers } from "./server-methods/talk.js";
 import { ttsHandlers } from "./server-methods/tts.js";
 import { updateHandlers } from "./server-methods/update.js";
 import { usageHandlers } from "./server-methods/usage.js";
+import { vislzrHandlers } from "./server-methods/vislzr.js";
 import { voicewakeHandlers } from "./server-methods/voicewake.js";
 import { webHandlers } from "./server-methods/web.js";
 import { wizardHandlers } from "./server-methods/wizard.js";
@@ -79,6 +80,8 @@ const READ_METHODS = new Set([
   "config.get",
   "talk.config",
   "update.check",
+  "cc.vislzr.canvases",
+  "cc.vislzr.canvas",
 ]);
 const WRITE_METHODS = new Set([
   "send",
@@ -95,6 +98,13 @@ const WRITE_METHODS = new Set([
   "chat.send",
   "chat.abort",
   "browser.request",
+  "cc.vislzr.canvas.create",
+  "cc.vislzr.canvas.delete",
+  "cc.vislzr.node.create",
+  "cc.vislzr.node.update",
+  "cc.vislzr.node.delete",
+  "cc.vislzr.edge.create",
+  "cc.vislzr.edge.delete",
 ]);
 
 function authorizeGatewayMethod(method: string, client: GatewayRequestOptions["client"]) {
@@ -195,6 +205,7 @@ export const coreGatewayHandlers: GatewayRequestHandlers = {
   ...agentHandlers,
   ...agentsHandlers,
   ...browserHandlers,
+  ...vislzrHandlers,
 };
 
 export async function handleGatewayRequest(
