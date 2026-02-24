@@ -31,6 +31,9 @@ import { Type } from "@sinclair/typebox";
 import {
   ccHealthCheck,
   ccKbSearch,
+  ccKbIndex,
+  ccKbIndexClear,
+  ccKbIndexStatus,
   getCCBaseUrl,
   type CCSearchResult,
   // Pipelines
@@ -947,6 +950,48 @@ export default {
         respond(true, response);
       } catch (err) {
         respond(false, { error: err instanceof Error ? err.message : "CC KB search failed" });
+      }
+    });
+
+    api.registerGatewayMethod("cc.kb.index", async ({ params, respond }) => {
+      const projectId = typeof params.project_id === "string" ? params.project_id : "default";
+      const dirPath = typeof params.path === "string" ? params.path.trim() : "";
+      if (!dirPath) {
+        respond(false, { error: "path is required" });
+        return;
+      }
+      try {
+        const result = await ccKbIndex(projectId, dirPath, {
+          include_patterns: Array.isArray(params.include_patterns)
+            ? (params.include_patterns as string[])
+            : undefined,
+          exclude_patterns: Array.isArray(params.exclude_patterns)
+            ? (params.exclude_patterns as string[])
+            : undefined,
+        });
+        respond(true, result);
+      } catch (err) {
+        respond(false, { error: err instanceof Error ? err.message : "CC KB index failed" });
+      }
+    });
+
+    api.registerGatewayMethod("cc.kb.index.status", async ({ params, respond }) => {
+      const projectId = typeof params.project_id === "string" ? params.project_id : "default";
+      try {
+        respond(true, await ccKbIndexStatus(projectId));
+      } catch (err) {
+        respond(false, {
+          error: err instanceof Error ? err.message : "CC KB index status failed",
+        });
+      }
+    });
+
+    api.registerGatewayMethod("cc.kb.index.clear", async ({ params, respond }) => {
+      const projectId = typeof params.project_id === "string" ? params.project_id : "default";
+      try {
+        respond(true, await ccKbIndexClear(projectId));
+      } catch (err) {
+        respond(false, { error: err instanceof Error ? err.message : "CC KB index clear failed" });
       }
     });
 

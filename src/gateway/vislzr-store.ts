@@ -58,6 +58,17 @@ function getDb(): DatabaseSync {
     CREATE INDEX IF NOT EXISTS idx_nodes_canvas ON nodes(canvas_id);
     CREATE INDEX IF NOT EXISTS idx_edges_canvas ON edges(canvas_id);
   `);
+  // Migration: add linked entity columns if missing
+  try {
+    db.exec(`ALTER TABLE nodes ADD COLUMN linked_entity_type TEXT`);
+  } catch {
+    // Column already exists
+  }
+  try {
+    db.exec(`ALTER TABLE nodes ADD COLUMN linked_entity_id TEXT`);
+  } catch {
+    // Column already exists
+  }
   _db = db;
   return db;
 }
@@ -87,6 +98,8 @@ export interface NodeRow {
   position_x: number;
   position_y: number;
   data: string | null;
+  linked_entity_type: string | null;
+  linked_entity_id: string | null;
   created_at: number;
 }
 
@@ -153,6 +166,8 @@ export function createNode(
     position_x?: number;
     position_y?: number;
     data?: Record<string, unknown>;
+    linked_entity_type?: string;
+    linked_entity_id?: string;
   },
 ): NodeRow {
   const db = getDb();
@@ -166,10 +181,23 @@ export function createNode(
   const posX = opts.position_x ?? 0;
   const posY = opts.position_y ?? 0;
   const dataStr = opts.data ? JSON.stringify(opts.data) : null;
+  const linkedType = opts.linked_entity_type ?? null;
+  const linkedId = opts.linked_entity_id ?? null;
   const stmt = db.prepare(
-    `INSERT INTO nodes (id, canvas_id, node_type, label, position_x, position_y, data, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO nodes (id, canvas_id, node_type, label, position_x, position_y, data, linked_entity_type, linked_entity_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   );
-  stmt.run(id, canvasId, opts.node_type, opts.label, posX, posY, dataStr, now);
+  stmt.run(
+    id,
+    canvasId,
+    opts.node_type,
+    opts.label,
+    posX,
+    posY,
+    dataStr,
+    linkedType,
+    linkedId,
+    now,
+  );
   // Update canvas updated_at
   db.prepare(`UPDATE canvases SET updated_at = ? WHERE id = ?`).run(now, canvasId);
   return {
@@ -180,6 +208,8 @@ export function createNode(
     position_x: posX,
     position_y: posY,
     data: dataStr,
+    linked_entity_type: linkedType,
+    linked_entity_id: linkedId,
     created_at: now,
   };
 }

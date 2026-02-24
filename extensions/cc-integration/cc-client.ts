@@ -260,6 +260,24 @@ export async function ccKbIndexStatus(projectId: string): Promise<CCIndexStatus>
   return ccFetch<CCIndexStatus>(`/api/kb/index/status?${params}`);
 }
 
+export async function ccKbIndex(
+  projectId: string,
+  dirPath: string,
+  opts?: { include_patterns?: string[]; exclude_patterns?: string[] },
+): Promise<{ status: string; indexed_count: number }> {
+  const params = new URLSearchParams({ project_id: projectId });
+  return ccFetch(`/api/kb/index?${params}`, {
+    method: "POST",
+    body: JSON.stringify({ path: dirPath, ...opts }),
+    signal: AbortSignal.timeout(120_000), // Indexing can be slow
+  });
+}
+
+export async function ccKbIndexClear(projectId: string): Promise<{ status: string }> {
+  const params = new URLSearchParams({ project_id: projectId });
+  return ccFetch(`/api/kb/index?${params}`, { method: "DELETE" });
+}
+
 // ── Pipelines ──────────────────────────────────────────────
 
 export async function ccPipelinesList(owner?: string): Promise<CCPipelineSummary[]> {

@@ -374,6 +374,47 @@ export class WildvineApp extends LitElement {
   @state() notesSearchLoading = false;
   @state() notesFilter: "active" | "dismissed" | "all" = "active";
 
+  // ── VISLZR state ──────────────────────────────────────────
+  @state() vislzrLoading = false;
+  @state() vislzrError: string | null = null;
+  @state() vislzrCanvases: {
+    id: string;
+    name: string;
+    description: string | null;
+    node_count: number;
+    edge_count: number;
+  }[] = [];
+  @state() vislzrSelectedCanvasId: string | null = null;
+  @state() vislzrCanvasNodes: {
+    id: string;
+    node_type: string;
+    label: string;
+    position_x: number;
+    position_y: number;
+    data: Record<string, unknown> | null;
+  }[] = [];
+  @state() vislzrCanvasEdges: {
+    id: string;
+    source_node_id: string;
+    target_node_id: string;
+    edge_type: string;
+    label: string | null;
+  }[] = [];
+
+  // ── VISLZR + KB + Projects state ─────────────────────────
+  @state() vislzrKbQuery = "";
+  @state() vislzrKbResults: import("./controllers/vislzr.js").KbSearchResult[] = [];
+  @state() vislzrKbSearchLoading = false;
+  @state() vislzrKbError: string | null = null;
+  @state() vislzrKbIndexStatus: import("./controllers/vislzr.js").KbIndexStatus | null = null;
+  @state() vislzrKbIndexing = false;
+  @state() vislzrActiveProjectId = this.settings.vislzrActiveProjectId ?? "default";
+  @state() vislzrProjects: import("./storage.js").VislzrProject[] = this.settings
+    .vislzrProjects ?? [{ id: "default", name: "Default", path: null }];
+  @state() vislzrProjectManageOpen = false;
+  @state() vislzrAddProjectName = "";
+  @state() vislzrAddProjectPath = "";
+
   client: GatewayBrowserClient | null = null;
   private chatScrollFrame: number | null = null;
   private chatScrollTimeout: number | null = null;

@@ -19,6 +19,8 @@ const createHost = (tab: Tab): SettingsHost => ({
     splitRatio: 0.6,
     navCollapsed: false,
     navGroupsCollapsed: {},
+    vislzrActiveProjectId: "default",
+    vislzrProjects: [{ id: "default", name: "Default", path: null }],
   },
   theme: "system",
   themeResolved: "dark",

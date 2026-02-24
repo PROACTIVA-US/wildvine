@@ -2,6 +2,12 @@ const KEY = "wildvine.control.settings.v1";
 
 import type { ThemeMode } from "./theme.ts";
 
+export interface VislzrProject {
+  id: string;
+  name: string;
+  path: string | null;
+}
+
 export type UiSettings = {
   gatewayUrl: string;
   token: string;
@@ -13,6 +19,8 @@ export type UiSettings = {
   splitRatio: number; // Sidebar split ratio (0.4 to 0.7, default 0.6)
   navCollapsed: boolean; // Collapsible sidebar state
   navGroupsCollapsed: Record<string, boolean>; // Which nav groups are collapsed
+  vislzrActiveProjectId: string; // Active project for VISLZR scoping
+  vislzrProjects: VislzrProject[]; // Configured projects
 };
 
 export function loadSettings(): UiSettings {
@@ -32,6 +40,8 @@ export function loadSettings(): UiSettings {
     splitRatio: 0.6,
     navCollapsed: false,
     navGroupsCollapsed: {},
+    vislzrActiveProjectId: "default",
+    vislzrProjects: [{ id: "default", name: "Default", path: null }],
   };
 
   try {
@@ -77,6 +87,14 @@ export function loadSettings(): UiSettings {
         typeof parsed.navGroupsCollapsed === "object" && parsed.navGroupsCollapsed !== null
           ? parsed.navGroupsCollapsed
           : defaults.navGroupsCollapsed,
+      vislzrActiveProjectId:
+        typeof parsed.vislzrActiveProjectId === "string" && parsed.vislzrActiveProjectId.trim()
+          ? parsed.vislzrActiveProjectId.trim()
+          : defaults.vislzrActiveProjectId,
+      vislzrProjects:
+        Array.isArray(parsed.vislzrProjects) && parsed.vislzrProjects.length > 0
+          ? parsed.vislzrProjects
+          : defaults.vislzrProjects,
     };
   } catch {
     return defaults;

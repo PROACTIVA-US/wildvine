@@ -100,6 +100,8 @@ export const vislzrHandlers: GatewayRequestHandlers = {
         label,
         position_x: params.position_x as number | undefined,
         position_y: params.position_y as number | undefined,
+        linked_entity_type: params.linked_entity_type as string | undefined,
+        linked_entity_id: params.linked_entity_id as string | undefined,
       });
       respond(true, node);
     } catch (err) {

@@ -65,6 +65,18 @@ import {
   updateSkillEnabled,
 } from "./controllers/skills.ts";
 import "./components/voice-toggle.ts";
+import {
+  loadVislzrCanvases,
+  loadVislzrCanvas,
+  createVislzrCanvas,
+  searchVislzrKb,
+  loadVislzrKbIndexStatus,
+  addKbResultToCanvas,
+  switchVislzrProject,
+  addVislzrProject,
+  removeVislzrProject,
+  indexVislzrProject,
+} from "./controllers/vislzr.ts";
 import { icons } from "./icons.ts";
 import {
   normalizeBasePath,
@@ -427,45 +439,104 @@ export function renderApp(state: AppViewState) {
         ${
           state.tab === "vislzr"
             ? renderVislzr({
-                loading: (state as unknown as Record<string, boolean>).vislzrLoading ?? false,
-                error: (state as unknown as Record<string, string | null>).vislzrError ?? null,
-                canvases:
-                  ((state as unknown as Record<string, unknown>).vislzrCanvases as {
-                    id: string;
-                    name: string;
-                    description: string | null;
-                    node_count: number;
-                    edge_count: number;
-                  }[]) ?? [],
-                selectedCanvasId:
-                  (state as unknown as Record<string, string | null>).vislzrSelectedCanvasId ??
-                  null,
-                canvasNodes:
-                  ((state as unknown as Record<string, unknown>).vislzrCanvasNodes as {
-                    id: string;
-                    node_type: string;
-                    label: string;
-                    position_x: number;
-                    position_y: number;
-                    data: Record<string, unknown> | null;
-                  }[]) ?? [],
-                canvasEdges:
-                  ((state as unknown as Record<string, unknown>).vislzrCanvasEdges as {
-                    id: string;
-                    source_node_id: string;
-                    target_node_id: string;
-                    edge_type: string;
-                    label: string | null;
-                  }[]) ?? [],
+                loading: state.vislzrLoading,
+                error: state.vislzrError,
+                canvases: state.vislzrCanvases,
+                selectedCanvasId: state.vislzrSelectedCanvasId,
+                canvasNodes: state.vislzrCanvasNodes,
+                canvasEdges: state.vislzrCanvasEdges,
                 reactMounted: false,
-                onRefresh: () => {},
-                onSelectCanvas: () => {},
-                onCreateCanvas: () => {},
+                // KB integration
+                kbQuery: state.vislzrKbQuery,
+                kbResults: state.vislzrKbResults,
+                kbSearchLoading: state.vislzrKbSearchLoading,
+                kbIndexStatus: state.vislzrKbIndexStatus,
+                kbError: state.vislzrKbError,
+                kbIndexing: state.vislzrKbIndexing,
+                // Project isolation
+                activeProjectId: state.vislzrActiveProjectId,
+                projects: state.vislzrProjects,
+                projectManageOpen: state.vislzrProjectManageOpen,
+                addProjectName: state.vislzrAddProjectName,
+                addProjectPath: state.vislzrAddProjectPath,
+                // Canvas callbacks
+                onRefresh: () =>
+                  loadVislzrCanvases(
+                    state as unknown as import("./controllers/vislzr.ts").VislzrState,
+                  ),
+                onSelectCanvas: (id) =>
+                  loadVislzrCanvas(
+                    state as unknown as import("./controllers/vislzr.ts").VislzrState,
+                    id,
+                  ),
+                onCreateCanvas: (name) =>
+                  createVislzrCanvas(
+                    state as unknown as import("./controllers/vislzr.ts").VislzrState,
+                    name,
+                  ),
                 onDeleteCanvas: () => {},
                 onNodeClick: () => {},
                 onNodeDragEnd: () => {},
                 onAddNode: () => {},
                 onMountReact: () => {},
+                // KB callbacks
+                onKbQueryChange: (q) => (state.vislzrKbQuery = q),
+                onKbSearch: () =>
+                  searchVislzrKb(state as unknown as import("./controllers/vislzr.ts").VislzrState),
+                onKbResultToNode: (result) => {
+                  const canvasId = state.vislzrSelectedCanvasId;
+                  if (canvasId) {
+                    void addKbResultToCanvas(
+                      state as unknown as import("./controllers/vislzr.ts").VislzrState,
+                      canvasId,
+                      result,
+                    );
+                  }
+                },
+                // Project callbacks
+                onProjectChange: (projectId) => {
+                  switchVislzrProject(
+                    state as unknown as import("./controllers/vislzr.ts").VislzrState,
+                    projectId,
+                  );
+                  state.applySettings({
+                    ...state.settings,
+                    vislzrActiveProjectId: projectId,
+                    vislzrProjects: state.vislzrProjects,
+                  });
+                },
+                onToggleManageProjects: () =>
+                  (state.vislzrProjectManageOpen = !state.vislzrProjectManageOpen),
+                onAddProjectNameChange: (v) => (state.vislzrAddProjectName = v),
+                onAddProjectPathChange: (v) => (state.vislzrAddProjectPath = v),
+                onAddProject: () => {
+                  addVislzrProject(
+                    state as unknown as import("./controllers/vislzr.ts").VislzrState,
+                    state.vislzrAddProjectName.trim(),
+                    state.vislzrAddProjectPath.trim(),
+                  );
+                  state.applySettings({
+                    ...state.settings,
+                    vislzrProjects: state.vislzrProjects,
+                  });
+                },
+                onRemoveProject: (projectId) => {
+                  void removeVislzrProject(
+                    state as unknown as import("./controllers/vislzr.ts").VislzrState,
+                    projectId,
+                  ).then(() => {
+                    state.applySettings({
+                      ...state.settings,
+                      vislzrActiveProjectId: state.vislzrActiveProjectId,
+                      vislzrProjects: state.vislzrProjects,
+                    });
+                  });
+                },
+                onIndexProject: (projectId) =>
+                  indexVislzrProject(
+                    state as unknown as import("./controllers/vislzr.ts").VislzrState,
+                    projectId,
+                  ),
               })
             : nothing
         }

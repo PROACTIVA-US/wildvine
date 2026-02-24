@@ -14,8 +14,10 @@ import type { ExecApprovalRequest } from "./controllers/exec-approval.ts";
 import type { ExecApprovalsFile, ExecApprovalsSnapshot } from "./controllers/exec-approvals.ts";
 import type { CCInboxItem, CCKbSearchResult } from "./controllers/notes.ts";
 import type { CCSkillSummary, SkillMessage } from "./controllers/skills.ts";
+import type { KbSearchResult, KbIndexStatus } from "./controllers/vislzr.ts";
 import type { GatewayBrowserClient, GatewayHelloOk } from "./gateway.ts";
 import type { Tab } from "./navigation.ts";
+import type { VislzrProject } from "./storage.ts";
 import type { UiSettings } from "./storage.ts";
 import type { ThemeTransitionContext } from "./theme-transition.ts";
 import type { ThemeMode } from "./theme.ts";
@@ -267,6 +269,44 @@ export type AppViewState = {
   notesSearchResults: CCKbSearchResult[];
   notesSearchLoading: boolean;
   notesFilter: "active" | "dismissed" | "all";
+  // ── VISLZR state ──────────────────────────────────────────
+  vislzrLoading: boolean;
+  vislzrError: string | null;
+  vislzrCanvases: {
+    id: string;
+    name: string;
+    description: string | null;
+    node_count: number;
+    edge_count: number;
+  }[];
+  vislzrSelectedCanvasId: string | null;
+  vislzrCanvasNodes: {
+    id: string;
+    node_type: string;
+    label: string;
+    position_x: number;
+    position_y: number;
+    data: Record<string, unknown> | null;
+  }[];
+  vislzrCanvasEdges: {
+    id: string;
+    source_node_id: string;
+    target_node_id: string;
+    edge_type: string;
+    label: string | null;
+  }[];
+  // ── VISLZR + KB + Projects state ─────────────────────────
+  vislzrKbQuery: string;
+  vislzrKbResults: KbSearchResult[];
+  vislzrKbSearchLoading: boolean;
+  vislzrKbError: string | null;
+  vislzrKbIndexStatus: KbIndexStatus | null;
+  vislzrKbIndexing: boolean;
+  vislzrActiveProjectId: string;
+  vislzrProjects: VislzrProject[];
+  vislzrProjectManageOpen: boolean;
+  vislzrAddProjectName: string;
+  vislzrAddProjectPath: string;
   client: GatewayBrowserClient | null;
   refreshSessionsAfterChat: Set<string>;
   connect: () => void;
