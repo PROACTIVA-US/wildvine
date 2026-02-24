@@ -2,6 +2,7 @@ import type { GatewayRequestHandlers, GatewayRequestOptions } from "./server-met
 import { ErrorCodes, errorShape } from "./protocol/index.js";
 import { agentHandlers } from "./server-methods/agent.js";
 import { agentsHandlers } from "./server-methods/agents.js";
+import { arenaHandlers } from "./server-methods/arena.js";
 import { browserHandlers } from "./server-methods/browser.js";
 import { channelsHandlers } from "./server-methods/channels.js";
 import { chatHandlers } from "./server-methods/chat.js";
@@ -10,12 +11,19 @@ import { connectHandlers } from "./server-methods/connect.js";
 import { cronHandlers } from "./server-methods/cron.js";
 import { deviceHandlers } from "./server-methods/devices.js";
 import { execApprovalsHandlers } from "./server-methods/exec-approvals.js";
+import { governorHandlers } from "./server-methods/governor.js";
 import { healthHandlers } from "./server-methods/health.js";
+import { idealzrHandlers } from "./server-methods/idealzr.js";
+import { inboxHandlers } from "./server-methods/inbox.js";
+import { kbHandlers } from "./server-methods/kb.js";
 import { logsHandlers } from "./server-methods/logs.js";
 import { modelsHandlers } from "./server-methods/models.js";
 import { nodeHandlers } from "./server-methods/nodes.js";
+import { notesHandlers } from "./server-methods/notes.js";
+import { pipelineHandlers } from "./server-methods/pipelines.js";
 import { sendHandlers } from "./server-methods/send.js";
 import { sessionsHandlers } from "./server-methods/sessions.js";
+import { skillsCcHandlers } from "./server-methods/skills-cc.js";
 import { skillsHandlers } from "./server-methods/skills.js";
 import { systemHandlers } from "./server-methods/system.js";
 import { talkHandlers } from "./server-methods/talk.js";
@@ -82,6 +90,36 @@ const READ_METHODS = new Set([
   "update.check",
   "cc.vislzr.canvases",
   "cc.vislzr.canvas",
+  // CC Health
+  "cc.health",
+  // Governor
+  "cc.governor.pending",
+  "cc.governor.history",
+  // Inbox
+  "cc.inbox.list",
+  "cc.inbox.counts",
+  // IDEALZR
+  "cc.idealzr.goals.list",
+  "cc.idealzr.hypotheses.list",
+  "cc.idealzr.evidence.list",
+  // KB
+  "cc.kb.search",
+  "cc.kb.index.status",
+  // Arena
+  "cc.arena.sessions",
+  "cc.arena.messages",
+  // Skills
+  "cc.skills.list",
+  "cc.skills.get",
+  "cc.skills.resolve",
+  // Pipelines
+  "cc.pipelines.list",
+  "cc.pipelines.get",
+  "cc.runs.list",
+  "cc.runs.get",
+  // Notes
+  "notes.list",
+  "notes.search",
 ]);
 const WRITE_METHODS = new Set([
   "send",
@@ -105,6 +143,40 @@ const WRITE_METHODS = new Set([
   "cc.vislzr.node.delete",
   "cc.vislzr.edge.create",
   "cc.vislzr.edge.delete",
+  // Governor
+  "cc.governor.approve",
+  "cc.governor.deny",
+  "cc.governor.create",
+  // Inbox
+  "cc.inbox.ack",
+  "cc.inbox.create",
+  // IDEALZR
+  "cc.idealzr.goals.create",
+  "cc.idealzr.goals.update",
+  "cc.idealzr.goals.delete",
+  "cc.idealzr.hypotheses.create",
+  "cc.idealzr.hypotheses.update",
+  "cc.idealzr.hypotheses.delete",
+  "cc.idealzr.evidence.create",
+  "cc.idealzr.evidence.update",
+  "cc.idealzr.evidence.delete",
+  // KB
+  "cc.kb.index",
+  "cc.kb.index.clear",
+  "cc.knowledge.capture",
+  // Arena
+  "cc.arena.create",
+  "cc.arena.chat",
+  // Skills
+  "cc.skills.ingest",
+  "cc.skills.scan",
+  // Pipelines
+  "cc.pipelines.load",
+  "cc.runs.create",
+  // Notes
+  "notes.capture",
+  "notes.dismiss",
+  "notes.complete",
 ]);
 
 function authorizeGatewayMethod(method: string, client: GatewayRequestOptions["client"]) {
@@ -206,6 +278,14 @@ export const coreGatewayHandlers: GatewayRequestHandlers = {
   ...agentsHandlers,
   ...browserHandlers,
   ...vislzrHandlers,
+  ...governorHandlers,
+  ...inboxHandlers,
+  ...idealzrHandlers,
+  ...kbHandlers,
+  ...arenaHandlers,
+  ...skillsCcHandlers,
+  ...pipelineHandlers,
+  ...notesHandlers,
 };
 
 export async function handleGatewayRequest(
