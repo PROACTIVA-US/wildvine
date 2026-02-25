@@ -19,6 +19,7 @@ import {
   loadCcArenaSessions,
   loadCcArenaMessages,
   sendCcArenaChat,
+  loadCcGovernorHistory,
 } from "./controllers/cc-data.ts";
 import { loadChannels } from "./controllers/channels.ts";
 import { loadChatHistory } from "./controllers/chat.ts";
@@ -1407,6 +1408,9 @@ export function renderApp(state: AppViewState) {
                 onRefresh: () => loadCcGovernor(state),
                 onApprove: (id) => approveCcReferral(state, id),
                 onDeny: (id) => denyCcReferral(state, id),
+                history: state.ccGovernorHistory,
+                historyLoading: state.ccGovernorHistoryLoading,
+                onLoadHistory: () => loadCcGovernorHistory(state),
               })}
             `
             : nothing

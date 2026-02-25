@@ -1,5 +1,5 @@
 import { html, nothing } from "lit";
-import type { CCReferral } from "../controllers/cc-data.ts";
+import type { CCReferral, CCGovernorHistoryItem } from "../controllers/cc-data.ts";
 
 export type CcGovernorProps = {
   loading: boolean;
@@ -9,6 +9,9 @@ export type CcGovernorProps = {
   onRefresh: () => void;
   onApprove: (referralId: string) => void;
   onDeny: (referralId: string) => void;
+  history: CCGovernorHistoryItem[];
+  historyLoading: boolean;
+  onLoadHistory: () => void;
 };
 
 export function renderCcGovernor(props: CcGovernorProps) {
@@ -78,6 +81,62 @@ export function renderCcGovernor(props: CcGovernorProps) {
                 </div>
               `,
             )}
+          </div>
+        `
+    }
+
+    ${
+      props.history.length > 0 || props.historyLoading
+        ? html`
+          <div style="margin-top: 24px">
+            <div class="toolbar" style="margin-bottom: 12px">
+              <strong>Decision History</strong>
+              <button
+                class="btn btn--sm"
+                style="margin-left: 8px"
+                @click=${props.onLoadHistory}
+                ?disabled=${props.historyLoading}
+              >
+                ${props.historyLoading ? "Loading..." : "Refresh History"}
+              </button>
+            </div>
+            ${props.history.map(
+              (h) => html`
+                <div class="card" style="margin-bottom: 6px; opacity: 0.85">
+                  <div class="card-body" style="padding: 8px 12px">
+                    <div style="display: flex; justify-content: space-between; align-items: center">
+                      <div>
+                        <span class="mono" style="font-size: 12px">${h.referral_id}</span>
+                        <span class="badge" style="margin-left: 6px">${h.referral_kind}</span>
+                        <span
+                          class="badge"
+                          style="margin-left: 4px; background: ${h.status === "approved" ? "#22c55e" : h.status === "denied" ? "#ef4444" : "#a3a3a3"}"
+                        >
+                          ${h.status}
+                        </span>
+                      </div>
+                      ${
+                        h.decision
+                          ? html`<span class="muted" style="font-size: 11px">
+                            ${h.decision.decided_by} · ${h.decision.decided_at}
+                          </span>`
+                          : nothing
+                      }
+                    </div>
+                    <div class="muted" style="font-size: 12px; margin-top: 2px">
+                      ${h.referral_reason}
+                    </div>
+                  </div>
+                </div>
+              `,
+            )}
+          </div>
+        `
+        : html`
+          <div style="margin-top: 16px">
+            <button class="btn btn--sm" @click=${props.onLoadHistory}>
+              Load Decision History
+            </button>
           </div>
         `
     }

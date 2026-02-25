@@ -38,6 +38,9 @@ import {
   ccKnowledgeSessionEnd,
   ccSkillsIngest,
   ccNotesCapture,
+  ccDashboardSummary,
+  ccGovernorResume,
+  ccGovernorHistory,
 } from "./cc-client.js";
 
 // Cache CC reachability for 30 seconds to avoid spamming health checks
@@ -858,6 +861,152 @@ export default {
       { optional: true },
     );
 
+    // ── Agent Tool: cc_dashboard_summary ─────────────────────
+
+    api.registerTool(
+      {
+        name: "cc_dashboard_summary",
+        label: "CC Dashboard",
+        description:
+          "Get a comprehensive summary of CommandCentral's system status. " +
+          "Shows pipeline runs, governor queue, messaging, autonomous workers, " +
+          "KB stats, arena sessions, and recent activity feed.",
+        parameters: Type.Object({}),
+
+        async execute() {
+          try {
+            const summary = await ccDashboardSummary();
+            const lines = [
+              `**CommandCentral Dashboard** (${summary.timestamp})`,
+              `Uptime: ${summary.system.uptime_human} · ${summary.system.pipelines_available} pipelines`,
+              "",
+              `**Runs:** ${summary.runs.total} total — ${
+                Object.entries(summary.runs.stats)
+                  .map(([k, v]) => `${v} ${k}`)
+                  .join(", ") || "none"
+              }`,
+              `**Governor:** ${summary.governor.pending_count} pending, ${summary.governor.total_decisions} decisions`,
+              `**Messaging:** ${summary.messaging.pending} pending, ${summary.messaging.dead_letter} dead-letter`,
+              `**Autonomous:** ${summary.autonomous.workers_active} active workers, ${summary.autonomous.workers_circuit_broken} circuit-broken`,
+              `**KB:** ${summary.kb.documents} documents`,
+              `**Arena:** ${summary.arena.active_sessions} active / ${summary.arena.total_sessions} total sessions`,
+            ];
+
+            if (summary.activity_feed.length > 0) {
+              lines.push("", "**Recent Activity:**");
+              for (const a of summary.activity_feed.slice(0, 5)) {
+                lines.push(`- [${a.source}] ${a.message} (${a.created_at})`);
+              }
+            }
+
+            return textResult(lines.join("\n"), summary);
+          } catch (err) {
+            return textResult(ccErrorText(err, "CC dashboard summary"));
+          }
+        },
+      },
+      { optional: true },
+    );
+
+    // ── Agent Tool: cc_governor_resume ───────────────────────
+
+    api.registerTool(
+      {
+        name: "cc_governor_resume",
+        label: "CC Governor Resume",
+        description:
+          "Resume a paused pipeline that was waiting for governor approval. " +
+          "Use cc_governor_list to find pending referrals, then use this to resume " +
+          "the associated pipeline run after approval.",
+        parameters: Type.Object({
+          referral_id: Type.String({ description: "ID of the referral to resume" }),
+          instance: Type.Optional(Type.String({ description: 'Instance (default: "hub")' })),
+          comment: Type.Optional(Type.String({ description: "Optional comment" })),
+          decided_by: Type.Optional(
+            Type.String({ description: "Who approved (default: wildvine)" }),
+          ),
+        }),
+
+        async execute(_id: string, params: Record<string, unknown>) {
+          const referralId = String(params.referral_id || "").trim();
+          if (!referralId) return textResult("Error: referral_id is required.");
+
+          const instance = typeof params.instance === "string" ? params.instance : "hub";
+          const comment = typeof params.comment === "string" ? params.comment : undefined;
+          const decidedBy = typeof params.decided_by === "string" ? params.decided_by : undefined;
+
+          try {
+            const result = await ccGovernorResume(instance, referralId, {
+              comment,
+              decided_by: decidedBy,
+            });
+            const lines = [
+              `Referral **${result.referral_id}** ${result.action}.`,
+              `Decision ID: ${result.decision_id}`,
+            ];
+            if (result.resumed_run_id) {
+              lines.push(`Pipeline run **${result.resumed_run_id}** resumed.`);
+            }
+            return textResult(lines.join("\n"), result);
+          } catch (err) {
+            return textResult(ccErrorText(err, "CC governor resume"));
+          }
+        },
+      },
+      { optional: true },
+    );
+
+    // ── Agent Tool: cc_governor_history ──────────────────────
+
+    api.registerTool(
+      {
+        name: "cc_governor_history",
+        label: "CC Governor History",
+        description:
+          "View the decision history of the governor queue. Shows past approvals and denials " +
+          "with who decided, when, and any associated pipeline context.",
+        parameters: Type.Object({
+          instance: Type.Optional(Type.String({ description: 'Instance (default: "hub")' })),
+          status: Type.Optional(
+            Type.String({ description: 'Filter by status: "approved", "denied", "pending"' }),
+          ),
+          limit: Type.Optional(Type.Number({ description: "Max items to return (default 20)" })),
+        }),
+
+        async execute(_id: string, params: Record<string, unknown>) {
+          const instance = typeof params.instance === "string" ? params.instance : "hub";
+          const status = typeof params.status === "string" ? params.status : undefined;
+          const limit = typeof params.limit === "number" ? params.limit : 20;
+
+          try {
+            const result = await ccGovernorHistory(instance, { status, limit });
+            if (result.history.length === 0) {
+              return textResult(`No governor decisions found for "${instance}".`);
+            }
+
+            const lines = result.history.map((h, i) => {
+              const parts = [`${i + 1}. **${h.referral_id}** [${h.status}] (${h.referral_kind})`];
+              parts.push(`   Reason: ${h.referral_reason}`);
+              if (h.decision) {
+                parts.push(
+                  `   Decision: ${h.decision.action} by ${h.decision.decided_by} at ${h.decision.decided_at}`,
+                );
+                if (h.decision.comment) parts.push(`   Comment: ${h.decision.comment}`);
+              }
+              return parts.join("\n");
+            });
+            return textResult(
+              `${result.total} decision(s) for "${instance}" (showing ${result.history.length}):\n\n${lines.join("\n\n")}`,
+              result,
+            );
+          } catch (err) {
+            return textResult(ccErrorText(err, "CC governor history"));
+          }
+        },
+      },
+      { optional: true },
+    );
+
     // ── Gateway RPCs ──────────────────────────────────────────
     // All CC gateway methods (cc.health, cc.kb.*, cc.governor.*, cc.arena.*,
     // cc.inbox.*, cc.idealzr.*, cc.skills.*, cc.pipelines.*, cc.runs.*,
@@ -940,7 +1089,10 @@ export default {
           "- cc_knowledge_capture: Push knowledge and learnings to CC's knowledge base\n" +
           "- memory_export: Export session memory to CC for cross-session persistence\n" +
           "- cc_skills_ingest: Submit skills to CC's evaluation pipeline\n" +
-          "- notes_capture: Capture a note/thought/idea for the user's living notes system",
+          "- notes_capture: Capture a note/thought/idea for the user's living notes system\n" +
+          "- cc_dashboard_summary: Get a comprehensive system status dashboard\n" +
+          "- cc_governor_resume: Resume a paused pipeline after governor approval\n" +
+          "- cc_governor_history: View governor decision history",
       };
     });
 

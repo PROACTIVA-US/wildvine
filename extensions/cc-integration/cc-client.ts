@@ -8,6 +8,7 @@
 const DEFAULT_BASE_URL = "http://localhost:9011";
 
 let baseUrl = process.env.CC_HUB_URL || DEFAULT_BASE_URL;
+let apiKey = process.env.CC_API_KEY || "cc-wildvine-local";
 
 export function setCCBaseUrl(url: string) {
   baseUrl = url;
@@ -15,6 +16,10 @@ export function setCCBaseUrl(url: string) {
 
 export function getCCBaseUrl(): string {
   return baseUrl;
+}
+
+export function setCCApiKey(key: string) {
+  apiKey = key;
 }
 
 // ── Types ──────────────────────────────────────────────────
@@ -186,6 +191,7 @@ async function ccFetch<T>(path: string, init?: RequestInit): Promise<T> {
     ...init,
     headers: {
       "Content-Type": "application/json",
+      "X-API-Key": apiKey,
       ...init?.headers,
     },
     signal: init?.signal ?? AbortSignal.timeout(10_000),
@@ -361,12 +367,36 @@ export async function ccGovernorDeny(
 
 export async function ccGovernorHistory(
   instance: string,
-  limit?: number,
-): Promise<{ history: CCReferral[] }> {
+  opts?: { status?: string; limit?: number; offset?: number },
+): Promise<{ history: CCGovernorHistoryItem[]; total: number; offset: number; limit: number }> {
   const params = new URLSearchParams();
-  if (limit) params.set("limit", String(limit));
+  if (opts?.status) params.set("status", opts.status);
+  if (opts?.limit) params.set("limit", String(opts.limit));
+  if (opts?.offset) params.set("offset", String(opts.offset));
   const qs = params.toString();
   return ccFetch(`/api/governor/${encodeURIComponent(instance)}/history${qs ? `?${qs}` : ""}`);
+}
+
+export async function ccGovernorResume(
+  instance: string,
+  referralId: string,
+  opts?: { decision?: string; comment?: string; decided_by?: string },
+): Promise<{
+  status: string;
+  action: string;
+  referral_id: string;
+  decision_id: string;
+  resumed_run_id?: string;
+}> {
+  return ccFetch(`/api/governor/${encodeURIComponent(instance)}/resume`, {
+    method: "POST",
+    body: JSON.stringify({
+      referral_id: referralId,
+      decision: opts?.decision ?? "approved",
+      comment: opts?.comment ?? "",
+      decided_by: opts?.decided_by ?? "wildvine",
+    }),
+  });
 }
 
 // ── Arena ──────────────────────────────────────────────────
@@ -954,6 +984,64 @@ export async function ccSkillsIngest(skill: {
     }),
   });
 }
+// ── Dashboard ─────────────────────────────────────────────
+
+export async function ccDashboardSummary(): Promise<CCDashboardSummary> {
+  return ccFetch<CCDashboardSummary>("/api/dashboard/summary");
+}
+
+// ── Autonomous Workers ────────────────────────────────────
+
+export async function ccAutonomousWorkersStatus(): Promise<CCWorkersStatus> {
+  return ccFetch<CCWorkersStatus>("/api/autonomous/workers/status");
+}
+
+export async function ccAutonomousDeadLetter(opts?: {
+  offset?: number;
+  limit?: number;
+}): Promise<{ dead_letter_tasks: CCDeadLetterTask[]; total: number }> {
+  const params = new URLSearchParams();
+  if (opts?.offset) params.set("offset", String(opts.offset));
+  if (opts?.limit) params.set("limit", String(opts.limit));
+  const qs = params.toString();
+  return ccFetch(`/api/autonomous/dead-letter${qs ? `?${qs}` : ""}`);
+}
+
+export async function ccAutonomousDeadLetterRetry(
+  dlId: string,
+): Promise<{ status: string; message: string }> {
+  return ccFetch(`/api/autonomous/dead-letter/${encodeURIComponent(dlId)}/retry`, {
+    method: "POST",
+  });
+}
+
+// ── Messaging Status ──────────────────────────────────────
+
+export async function ccMessagingWorkerStatus(): Promise<{
+  status: "running" | "stopped" | "not_initialized";
+}> {
+  return ccFetch("/api/messaging/worker/status");
+}
+
+export async function ccMessagingDeadLetter(opts?: {
+  offset?: number;
+  limit?: number;
+}): Promise<{ dead_letters: Record<string, unknown>[]; total: number }> {
+  const params = new URLSearchParams();
+  if (opts?.offset) params.set("offset", String(opts.offset));
+  if (opts?.limit) params.set("limit", String(opts.limit));
+  const qs = params.toString();
+  return ccFetch(`/api/messaging/dead-letter${qs ? `?${qs}` : ""}`);
+}
+
+export async function ccMessagingDeadLetterRetry(
+  deadLetterId: string,
+): Promise<{ status: string; message_id: string }> {
+  return ccFetch(`/api/messaging/dead-letter/${encodeURIComponent(deadLetterId)}/retry`, {
+    method: "POST",
+  });
+}
+
 // ── Notes (via Agent Inbox) ───────────────────────────────
 
 export interface CCInboxItem {
@@ -977,6 +1065,137 @@ export interface CCInboxItem {
 export interface CCInboxListResponse {
   items: CCInboxItem[];
   count: number;
+}
+
+// ── Dashboard Types ──────────────────────────────────────
+
+export interface CCDashboardSummary {
+  status: string;
+  timestamp: string;
+  system: {
+    uptime_seconds: number;
+    uptime_human: string;
+    pipelines_available: number;
+  };
+  runs: {
+    recent: {
+      run_id: string;
+      pipeline_name: string;
+      project_name: string;
+      started_at: string;
+      finished_at: string | null;
+      status: string;
+      summary: Record<string, unknown> | null;
+    }[];
+    stats: Record<string, number>;
+    total: number;
+  };
+  governor: {
+    pending_count: number;
+    decisions: Record<string, number>;
+    total_decisions: number;
+  };
+  messaging: {
+    pending: number;
+    dead_letter: number;
+    total: number;
+    available: boolean;
+  };
+  autonomous: {
+    active_sessions: number;
+    total_workers: number;
+    workers_active: number;
+    workers_paused: number;
+    workers_circuit_broken: number;
+    available: boolean;
+  };
+  kb: {
+    documents: number;
+    inbox_pending: number;
+    available: boolean;
+  };
+  arena: {
+    active_sessions: number;
+    total_sessions: number;
+    total_messages: number;
+    available: boolean;
+  };
+  idealzr: {
+    goals: Record<string, number>;
+    goals_total: number;
+    hypotheses: Record<string, number>;
+    hypotheses_total: number;
+    available: boolean;
+  };
+  activity_feed: {
+    source: string;
+    type: string;
+    message: string;
+    created_at: string;
+    pipeline_name?: string;
+    run_id?: string;
+    referral_id?: string;
+    decided_by?: string;
+  }[];
+}
+
+// ── Governor Decision Types ──────────────────────────────
+
+export interface CCGovernorDecision {
+  id: string;
+  action: string;
+  comment: string;
+  decided_by: string;
+  decided_at: string;
+  pipeline_run_id: string | null;
+  stage_id: string | null;
+}
+
+export interface CCGovernorHistoryItem {
+  referral_id: string;
+  referral_from: string;
+  referral_to: string;
+  referral_kind: string;
+  referral_reason: string;
+  referral_artifact_ref: string;
+  referral_created_at: string;
+  pipeline_context: Record<string, unknown> | null;
+  status: "pending" | "approved" | "denied";
+  decision: CCGovernorDecision | null;
+}
+
+// ── Autonomous Worker Types ──────────────────────────────
+
+export interface CCWorkerInfo {
+  worker_id: string;
+  session_id: string;
+  state: "active" | "paused" | "circuit_broken" | "stopped";
+  consecutive_failures: number;
+  last_task: string | null;
+  uptime: number;
+}
+
+export interface CCWorkersStatus {
+  status: string;
+  active_sessions: string[];
+  total_workers: number;
+  workers: CCWorkerInfo[];
+  summary: {
+    active: number;
+    paused: number;
+    circuit_broken: number;
+    stopped: number;
+  };
+}
+
+export interface CCDeadLetterTask {
+  id: string;
+  task_number: string;
+  task_title: string;
+  session_id: string;
+  error: string;
+  failed_at: string;
+  retry_count: number;
 }
 
 export async function ccNotesCapture(opts: {

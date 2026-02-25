@@ -8,6 +8,8 @@ import type {
   CCArenaSession,
   CCArenaMessage,
   CCProcessStatus,
+  CCDashboardSummary,
+  CCGovernorHistoryItem,
 } from "./controllers/cc-data.ts";
 import type { DevicePairingList } from "./controllers/devices.ts";
 import type { ExecApprovalRequest } from "./controllers/exec-approval.ts";
@@ -257,6 +259,12 @@ export type AppViewState = {
   ccArenaMessagesLoading: boolean;
   ccArenaChatInput: string;
   ccProcessStatus: CCProcessStatus | null;
+  ccDashboardLoading: boolean;
+  ccDashboardSummary: CCDashboardSummary | null;
+  ccDashboardError: string | null;
+  ccGovernorHistoryLoading: boolean;
+  ccGovernorHistory: CCGovernorHistoryItem[];
+  ccGovernorHistoryError: string | null;
   // ── Notes state ────────────────────────────────────────
   notesLoading: boolean;
   notesItems: CCInboxItem[];

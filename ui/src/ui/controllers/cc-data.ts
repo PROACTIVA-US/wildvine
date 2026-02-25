@@ -80,6 +80,58 @@ export type CCProcessStatus = {
   >;
 };
 
+export type CCDashboardSummary = {
+  status: string;
+  timestamp: string;
+  system: {
+    uptime_seconds: number;
+    uptime_human: string;
+    pipelines_available: number;
+  };
+  runs: {
+    recent: {
+      run_id: string;
+      pipeline_name: string;
+      status: string;
+      started_at: string;
+    }[];
+    stats: Record<string, number>;
+    total: number;
+  };
+  governor: {
+    pending_count: number;
+    total_decisions: number;
+  };
+  messaging: {
+    pending: number;
+    dead_letter: number;
+    available: boolean;
+  };
+  autonomous: {
+    workers_active: number;
+    workers_circuit_broken: number;
+    available: boolean;
+  };
+  activity_feed: {
+    source: string;
+    message: string;
+    created_at: string;
+  }[];
+};
+
+export type CCGovernorHistoryItem = {
+  referral_id: string;
+  referral_kind: string;
+  referral_reason: string;
+  status: "pending" | "approved" | "denied";
+  decision: {
+    action: string;
+    decided_by: string;
+    decided_at: string;
+    comment: string;
+  } | null;
+};
+
 // ── State types ────────────────────────────────────────────
 
 export type CcDataState = {
@@ -107,6 +159,12 @@ export type CcDataState = {
   ccArenaMessagesLoading: boolean;
   ccArenaChatInput: string;
   ccProcessStatus: CCProcessStatus | null;
+  ccDashboardLoading: boolean;
+  ccDashboardSummary: CCDashboardSummary | null;
+  ccDashboardError: string | null;
+  ccGovernorHistoryLoading: boolean;
+  ccGovernorHistory: CCGovernorHistoryItem[];
+  ccGovernorHistoryError: string | null;
 };
 
 // ── Loaders ────────────────────────────────────────────────
@@ -296,5 +354,42 @@ export async function loadCcProcessStatus(state: CcDataState) {
     state.ccProcessStatus = res ?? null;
   } catch {
     state.ccProcessStatus = null;
+  }
+}
+
+export async function loadCcDashboardSummary(state: CcDataState) {
+  if (!state.client || !state.connected) {
+    return;
+  }
+  state.ccDashboardLoading = true;
+  state.ccDashboardError = null;
+  try {
+    const res = await state.client.request<CCDashboardSummary>("cc.dashboard.summary", {});
+    state.ccDashboardSummary = res ?? null;
+  } catch (err) {
+    state.ccDashboardError = String(err);
+    state.ccDashboardSummary = null;
+  } finally {
+    state.ccDashboardLoading = false;
+  }
+}
+
+export async function loadCcGovernorHistory(state: CcDataState, instance = "hub") {
+  if (!state.client || !state.connected) {
+    return;
+  }
+  state.ccGovernorHistoryLoading = true;
+  state.ccGovernorHistoryError = null;
+  try {
+    const res = await state.client.request<{
+      history: CCGovernorHistoryItem[];
+      total: number;
+    }>("cc.governor.history", { instance, limit: 50 });
+    state.ccGovernorHistory = res?.history ?? [];
+  } catch (err) {
+    state.ccGovernorHistoryError = String(err);
+    state.ccGovernorHistory = [];
+  } finally {
+    state.ccGovernorHistoryLoading = false;
   }
 }

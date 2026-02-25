@@ -10,6 +10,8 @@ import type {
   CCArenaSession,
   CCArenaMessage,
   CCProcessStatus,
+  CCDashboardSummary,
+  CCGovernorHistoryItem,
 } from "./controllers/cc-data.ts";
 import type { DevicePairingList } from "./controllers/devices.ts";
 import type { ExecApprovalRequest } from "./controllers/exec-approval.ts";
@@ -360,6 +362,12 @@ export class WildvineApp extends LitElement {
   @state() ccArenaMessagesLoading = false;
   @state() ccArenaChatInput = "";
   @state() ccProcessStatus: CCProcessStatus | null = null;
+  @state() ccDashboardLoading = false;
+  @state() ccDashboardSummary: CCDashboardSummary | null = null;
+  @state() ccDashboardError: string | null = null;
+  @state() ccGovernorHistoryLoading = false;
+  @state() ccGovernorHistory: CCGovernorHistoryItem[] = [];
+  @state() ccGovernorHistoryError: string | null = null;
 
   // ── Notes state ────────────────────────────────────────
   @state() notesLoading = false;
