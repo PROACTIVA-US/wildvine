@@ -27,7 +27,7 @@ export function renderHome(props: HomeViewProps) {
           <div class="stat-value ${props.governorCount > 0 ? "warn" : ""}">${props.governorCount} pending</div>
         </div>
         <div class="stat card">
-          <div class="stat-label">COMMANDCENTRAL</div>
+          <div class="stat-label">ENGINE</div>
           <div class="stat-value ${props.ccHealthy ? "ok" : ""}">${props.ccHealthy ? "Running" : "Offline"}</div>
         </div>
       </div>

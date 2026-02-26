@@ -152,6 +152,9 @@ export class CCProcessManager {
         ...process.env,
         PYTHONPATH: svc.cwd,
         PYTHONUNBUFFERED: "1",
+        // Allow local dev access — Wildvine cc-integration uses this key
+        ALLOWED_API_KEYS: process.env.ALLOWED_API_KEYS ?? "cc-wildvine-local",
+        AUTH_ENABLED: process.env.AUTH_ENABLED ?? "true",
       },
       stdio: ["ignore", "pipe", "pipe"],
     });
