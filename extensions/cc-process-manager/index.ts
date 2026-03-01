@@ -23,8 +23,10 @@ type PluginConfig = {
   autoStart?: boolean;
   hubBackendPort?: number;
   gatewayPort?: number;
+  hubFrontendPort?: number;
   healthCheckIntervalMs?: number;
   maxRestartAttempts?: number;
+  stabilityWindowMs?: number;
 };
 
 function resolveConfig(raw: Record<string, unknown> | undefined): PluginConfig {
@@ -36,8 +38,10 @@ function resolveConfig(raw: Record<string, unknown> | undefined): PluginConfig {
     autoStart: cfg.autoStart !== false,
     hubBackendPort: cfg.hubBackendPort ?? 9011,
     gatewayPort: cfg.gatewayPort ?? 9000,
+    hubFrontendPort: cfg.hubFrontendPort ?? 9010,
     healthCheckIntervalMs: cfg.healthCheckIntervalMs ?? 30_000,
     maxRestartAttempts: cfg.maxRestartAttempts ?? 5,
+    stabilityWindowMs: cfg.stabilityWindowMs ?? 300_000, // 5 minutes
   };
 }
 
@@ -62,8 +66,10 @@ export default {
       pythonPath,
       hubBackendPort: pluginCfg.hubBackendPort!,
       gatewayPort: pluginCfg.gatewayPort!,
+      hubFrontendPort: pluginCfg.hubFrontendPort!,
       healthCheckIntervalMs: pluginCfg.healthCheckIntervalMs!,
       maxRestartAttempts: pluginCfg.maxRestartAttempts!,
+      stabilityWindowMs: pluginCfg.stabilityWindowMs!,
     };
 
     const manager = new CCProcessManager(managerConfig, api.logger);

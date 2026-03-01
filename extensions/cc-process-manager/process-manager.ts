@@ -7,7 +7,7 @@ import { spawn, type ChildProcess } from "node:child_process";
 import { existsSync } from "node:fs";
 import { resolve, join } from "node:path";
 
-export type ServiceId = "hub-backend" | "gateway";
+export type ServiceId = "hub-backend" | "gateway" | "hub-frontend";
 
 export type ServiceStatus = {
   id: ServiceId;
@@ -25,8 +25,11 @@ export type ProcessManagerConfig = {
   pythonPath: string;
   hubBackendPort: number;
   gatewayPort: number;
+  hubFrontendPort: number;
   healthCheckIntervalMs: number;
   maxRestartAttempts: number;
+  /** Seconds a service must run without crashing to reset its restart counter */
+  stabilityWindowMs: number;
 };
 
 type ManagedService = {
@@ -39,6 +42,9 @@ type ManagedService = {
   healthy: boolean;
   module: string;
   cwd: string;
+  /** "python" for uvicorn services, "node" for pnpm/node services */
+  runtime: "python" | "node";
+  stabilityTimer: ReturnType<typeof setTimeout> | null;
 };
 
 export class CCProcessManager {
@@ -65,6 +71,8 @@ export class CCProcessManager {
       healthy: false,
       module: "app:app",
       cwd: join(config.ccProjectRoot, "hub-backend"),
+      runtime: "python",
+      stabilityTimer: null,
     });
 
     this.services.set("gateway", {
@@ -77,7 +85,37 @@ export class CCProcessManager {
       healthy: false,
       module: "app:app",
       cwd: join(config.ccProjectRoot, "gateway"),
+      runtime: "python",
+      stabilityTimer: null,
     });
+
+    this.services.set("hub-frontend", {
+      id: "hub-frontend",
+      process: null,
+      port: config.hubFrontendPort,
+      startedAt: null,
+      restartCount: 0,
+      lastHealthCheck: null,
+      healthy: false,
+      module: "",
+      cwd: join(config.ccProjectRoot, "hub-frontend"),
+      runtime: "node",
+      stabilityTimer: null,
+    });
+  }
+
+  /** Return the correct health URL for each service */
+  private healthUrl(svc: ManagedService): string {
+    switch (svc.id) {
+      case "gateway":
+        return `http://localhost:${svc.port}/health`;
+      case "hub-backend":
+        return `http://localhost:${svc.port}/api/health`;
+      case "hub-frontend":
+        return `http://localhost:${svc.port}/`;
+      default:
+        return `http://localhost:${svc.port}/api/health`;
+    }
   }
 
   async startAll(): Promise<void> {
@@ -85,9 +123,17 @@ export class CCProcessManager {
 
     // Start hub-backend first — gateway depends on it
     await this.startService("hub-backend");
-    // Wait for hub-backend to become healthy before starting gateway
     await this.waitForHealth("hub-backend", 15_000);
+
+    // Start gateway
     await this.startService("gateway");
+    await this.waitForHealth("gateway", 10_000);
+
+    // Start hub-frontend
+    const frontendDir = join(this.config.ccProjectRoot, "hub-frontend");
+    if (existsSync(join(frontendDir, "package.json"))) {
+      await this.startService("hub-frontend");
+    }
 
     // Start health monitoring
     this.startHealthMonitor();
@@ -97,7 +143,8 @@ export class CCProcessManager {
     this.stopping = true;
     this.stopHealthMonitor();
 
-    // Stop gateway first, then hub-backend
+    // Stop in reverse start order
+    await this.stopService("hub-frontend");
     await this.stopService("gateway");
     await this.stopService("hub-backend");
   }
@@ -134,34 +181,64 @@ export class CCProcessManager {
       await new Promise((r) => setTimeout(r, 1000));
     }
 
+    // Clear any existing stability timer
+    if (svc.stabilityTimer) {
+      clearTimeout(svc.stabilityTimer);
+      svc.stabilityTimer = null;
+    }
+
     if (!existsSync(svc.cwd)) {
       this.logger.warn(`cc-process-manager: ${id} directory not found at ${svc.cwd}`);
       return;
     }
 
-    const pythonPath = this.config.pythonPath;
-    const args = ["-m", "uvicorn", svc.module, "--port", String(svc.port)];
+    let child: ChildProcess;
 
-    this.logger.info(
-      `cc-process-manager: starting ${id} — ${pythonPath} ${args.join(" ")} (cwd: ${svc.cwd})`,
-    );
-
-    const child = spawn(pythonPath, args, {
-      cwd: svc.cwd,
-      env: {
-        ...process.env,
-        PYTHONPATH: svc.cwd,
-        PYTHONUNBUFFERED: "1",
-        // Allow local dev access — Wildvine cc-integration uses this key
-        ALLOWED_API_KEYS: process.env.ALLOWED_API_KEYS ?? "cc-wildvine-local",
-        AUTH_ENABLED: process.env.AUTH_ENABLED ?? "true",
-      },
-      stdio: ["ignore", "pipe", "pipe"],
-    });
+    if (svc.runtime === "node") {
+      // Node/pnpm service (hub-frontend)
+      const args = ["dev", "--port", String(svc.port)];
+      this.logger.info(
+        `cc-process-manager: starting ${id} — pnpm ${args.join(" ")} (cwd: ${svc.cwd})`,
+      );
+      child = spawn("pnpm", args, {
+        cwd: svc.cwd,
+        env: { ...process.env },
+        stdio: ["ignore", "pipe", "pipe"],
+      });
+    } else {
+      // Python/uvicorn service
+      const pythonPath = this.config.pythonPath;
+      const args = ["-m", "uvicorn", svc.module, "--port", String(svc.port)];
+      this.logger.info(
+        `cc-process-manager: starting ${id} — ${pythonPath} ${args.join(" ")} (cwd: ${svc.cwd})`,
+      );
+      child = spawn(pythonPath, args, {
+        cwd: svc.cwd,
+        env: {
+          ...process.env,
+          PYTHONPATH: svc.cwd,
+          PYTHONUNBUFFERED: "1",
+          ALLOWED_API_KEYS: process.env.ALLOWED_API_KEYS ?? "cc-wildvine-local",
+          AUTH_ENABLED: process.env.AUTH_ENABLED ?? "true",
+        },
+        stdio: ["ignore", "pipe", "pipe"],
+      });
+    }
 
     svc.process = child;
     svc.startedAt = Date.now();
     svc.healthy = false;
+
+    // Start stability timer — reset restartCount after stabilityWindowMs of uptime
+    svc.stabilityTimer = setTimeout(() => {
+      if (svc.process && svc.process.exitCode === null && svc.restartCount > 0) {
+        this.logger.info(
+          `cc-process-manager: ${id} stable for ${this.config.stabilityWindowMs / 1000}s, resetting restart counter`,
+        );
+        svc.restartCount = 0;
+      }
+      svc.stabilityTimer = null;
+    }, this.config.stabilityWindowMs);
 
     child.stdout?.on("data", (data: Buffer) => {
       const text = data.toString().trim();
@@ -176,6 +253,12 @@ export class CCProcessManager {
     child.on("exit", (code, signal) => {
       this.logger.info(`cc-process-manager: ${id} exited (code=${code}, signal=${signal})`);
       svc.healthy = false;
+
+      // Clear stability timer on exit
+      if (svc.stabilityTimer) {
+        clearTimeout(svc.stabilityTimer);
+        svc.stabilityTimer = null;
+      }
 
       // Auto-restart if not stopping intentionally
       if (!this.stopping && svc.restartCount < this.config.maxRestartAttempts) {
@@ -196,6 +279,12 @@ export class CCProcessManager {
   private async stopService(id: ServiceId): Promise<void> {
     const svc = this.services.get(id);
     if (!svc?.process || svc.process.exitCode !== null) return;
+
+    // Clear stability timer
+    if (svc.stabilityTimer) {
+      clearTimeout(svc.stabilityTimer);
+      svc.stabilityTimer = null;
+    }
 
     this.logger.info(`cc-process-manager: stopping ${id} (PID ${svc.process.pid})`);
 
@@ -223,10 +312,11 @@ export class CCProcessManager {
     const svc = this.services.get(id);
     if (!svc) return false;
 
+    const url = this.healthUrl(svc);
     const deadline = Date.now() + timeoutMs;
     while (Date.now() < deadline) {
       try {
-        const res = await fetch(`http://localhost:${svc.port}/api/health`, {
+        const res = await fetch(url, {
           signal: AbortSignal.timeout(2000),
         });
         if (res.ok) {
@@ -265,7 +355,7 @@ export class CCProcessManager {
       }
 
       try {
-        const res = await fetch(`http://localhost:${svc.port}/api/health`, {
+        const res = await fetch(this.healthUrl(svc), {
           signal: AbortSignal.timeout(3000),
         });
         svc.healthy = res.ok;
