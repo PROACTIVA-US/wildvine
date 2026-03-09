@@ -30,6 +30,7 @@ import { loadNotes, searchNotes } from "./controllers/notes.ts";
 import { loadPresence } from "./controllers/presence.ts";
 import { loadSessions } from "./controllers/sessions.ts";
 import { loadSkills } from "./controllers/skills.ts";
+import { loadVislzrCanvases, loadVislzrKbIndexStatus } from "./controllers/vislzr.ts";
 import {
   inferBasePathFromPathname,
   normalizeBasePath,
@@ -272,6 +273,17 @@ export async function refreshActiveTab(host: SettingsHost) {
     const govHost = host as unknown as WildvineApp;
     govHost.notesSearchQuery = "governance approval decision";
     void searchNotes(govHost);
+  }
+  if (host.tab === "forge") {
+    await loadAgents(host as unknown as WildvineApp);
+    void loadCcGovernor(host as unknown as WildvineApp);
+  }
+  if (host.tab === "cc-kb") {
+    void loadVislzrKbIndexStatus(host as unknown as import("./controllers/vislzr.ts").VislzrState);
+  }
+  if (host.tab === "settings") {
+    await loadConfigSchema(host as unknown as WildvineApp);
+    await loadConfig(host as unknown as WildvineApp);
   }
   if (host.tab === "cc-arena") {
     await loadCcArenaSessions(host as unknown as WildvineApp);

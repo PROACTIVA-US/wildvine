@@ -77,6 +77,7 @@ import {
   addVislzrProject,
   removeVislzrProject,
   indexVislzrProject,
+  loadVislzrKbIndexStatus,
 } from "./controllers/vislzr.ts";
 import { icons } from "./icons.ts";
 import {
@@ -134,6 +135,60 @@ function resolveAssistantAvatarUrl(state: AppViewState): string | undefined {
   return identity?.avatarUrl;
 }
 
+// ── Agent Mindmap ─────────────────────
+function renderAgentMindmap(state: AppViewState, resolvedAgentId: string | null) {
+  const agents = (state.agentsList?.agents ?? []) as { id: string; identity?: { name?: string } }[];
+  if (agents.length === 0) {
+    return html`<div class="mindmap__empty">
+      ${
+        state.agentsLoading
+          ? html`<span style="color:var(--muted)">${icons.loader} Loading...</span>`
+          : html`
+              <span style="color: var(--muted)">No agents configured</span>
+            `
+      }
+    </div>`;
+  }
+
+  const governorCount = state.ccGovernorCount ?? 0;
+
+  return html`
+    <div class="mindmap">
+      <div class="mindmap__agents">
+        ${agents.map((agent) => {
+          const name = agent.identity?.name ?? agent.id;
+          const isActive = agent.id === resolvedAgentId;
+          return html`
+            <button class="mindmap__agent ${isActive ? "mindmap__agent--active" : ""}"
+                    @click=${() => {
+                      state.agentsSelectedId = agent.id;
+                    }}>
+              <div class="mindmap__agent-avatar">${name[0]?.toUpperCase() ?? "?"}</div>
+              <div class="mindmap__agent-name">${name}</div>
+              ${
+                isActive
+                  ? html`
+                      <span class="mindmap__agent-badge">active</span>
+                    `
+                  : nothing
+              }
+            </button>
+          `;
+        })}
+      </div>
+      ${
+        governorCount > 0
+          ? html`
+        <button class="mindmap__governor-alert" @click=${() => state.setTab("governance")}>
+          ${icons.shield} ${governorCount} pending approval${governorCount !== 1 ? "s" : ""}
+        </button>
+      `
+          : nothing
+      }
+    </div>
+  `;
+}
+
 export function renderApp(state: AppViewState) {
   const presenceCount = state.presenceEntries.length;
   const sessionsCount = state.sessionsResult?.count ?? null;
@@ -157,46 +212,34 @@ export function renderApp(state: AppViewState) {
     <div class="shell ${isChat ? "shell--chat" : ""} ${chatFocus ? "shell--chat-focus" : ""} ${state.settings.navCollapsed ? "shell--nav-collapsed" : ""} ${state.onboarding ? "shell--onboarding" : ""}">
       <header class="topbar">
         <div class="topbar-left">
-          <button
-            class="nav-collapse-toggle"
-            @click=${() =>
-              state.applySettings({
-                ...state.settings,
-                navCollapsed: !state.settings.navCollapsed,
-              })}
-            title="${state.settings.navCollapsed ? "Expand sidebar" : "Collapse sidebar"}"
-            aria-label="${state.settings.navCollapsed ? "Expand sidebar" : "Collapse sidebar"}"
-          >
-            <span class="nav-collapse-toggle__icon">${icons.menu}</span>
-          </button>
           <div class="brand">
             <div class="brand-logo">
-              <img src=${basePath ? `${basePath}/favicon.svg` : "/favicon.svg"} alt="Wildvine" />
+              <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#00FFFF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                <path d="M2 17l10 5 10-5"/>
+                <path d="M2 12l10 5 10-5"/>
+              </svg>
             </div>
             <div class="brand-text">
-              <div class="brand-title"><span style="font-weight:700">wild</span><span style="font-weight:400">vine</span></div>
+              <div class="brand-title"><span style="font-weight:700">the</span> <span style="font-weight:400">forge</span></div>
             </div>
           </div>
         </div>
         <div class="topbar-status">
-          <voice-toggle .gatewayUrl=${state.settings.gatewayUrl}></voice-toggle>
-          <input
-            class="input"
-            style="width: 180px; height: 28px; font-size: 12px"
-            type="text"
-            placeholder="Quick note..."
-            @keydown=${(e: KeyboardEvent) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                const input = e.target as HTMLInputElement;
-                const value = input.value.trim();
-                if (value && state.client && state.connected) {
-                  input.value = "";
-                  void state.client.request("notes.capture", { subject: value });
-                }
-              }
-            }}
-          />
+          <button class="topbar-icon" title="Knowledge Base" @click=${() => {
+            state.setTab(
+              state.tab === "cc-kb" ? ("forge" as import("./navigation.ts").Tab) : "cc-kb",
+            );
+          }}>
+            ${icons.brain}
+          </button>
+          <button class="topbar-icon" title="Settings" @click=${() => {
+            state.setTab(
+              state.tab === "settings" ? ("forge" as import("./navigation.ts").Tab) : "settings",
+            );
+          }}>
+            ${icons.settings}
+          </button>
           ${renderThemeToggle(state)}
         </div>
       </header>
@@ -213,17 +256,130 @@ export function renderApp(state: AppViewState) {
           </div>
         </div>
       </aside>
-      <main class="content ${isChat ? "content--chat" : ""}">
-        <section class="content-header">
-          <div>
-            ${state.tab === "usage" ? nothing : html`<div class="page-title">${titleForTab(state.tab)}</div>`}
-            ${state.tab === "usage" ? nothing : html`<div class="page-sub">${subtitleForTab(state.tab)}</div>`}
+      <main class="content" style="padding:0; overflow:hidden">
+        ${
+          state.tab === "settings"
+            ? html`
+          <div class="forge-panel-backdrop" @click=${() => state.setTab("forge" as import("./navigation.ts").Tab)}></div>
+          <div class="forge-panel-overlay">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px">
+              <h2 style="margin:0; font-size:20px; color:var(--text-strong)">Settings</h2>
+              <button class="topbar-icon" @click=${() => state.setTab("forge" as import("./navigation.ts").Tab)}>${icons.x}</button>
+            </div>
+            ${renderSettingsContainer({
+              activeSubTab:
+                ((state as unknown as Record<string, string>)
+                  .settingsSubTab as import("./navigation.ts").SettingsSubTab) ?? "config",
+              onSubTabChange: (tab) => {
+                (state as unknown as Record<string, string>).settingsSubTab = tab;
+              },
+              content: nothing,
+            })}
           </div>
-          <div class="page-meta">
-            ${state.lastError ? html`<div class="pill danger">${state.lastError}</div>` : nothing}
-            ${isChat ? renderChatControls(state) : nothing}
+        `
+            : nothing
+        }
+        ${
+          state.tab === "cc-kb"
+            ? html`
+          <div class="forge-panel-backdrop" @click=${() => state.setTab("forge" as import("./navigation.ts").Tab)}></div>
+          <div class="forge-panel-overlay">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px">
+              <h2 style="margin:0; font-size:20px; color:var(--text-strong)">Knowledge Base</h2>
+              <button class="topbar-icon" @click=${() => state.setTab("forge" as import("./navigation.ts").Tab)}>${icons.x}</button>
+            </div>
+            ${
+              state.vislzrKbIndexStatus
+                ? html`
+              <div class="kb-index-status" style="margin-bottom:16px; padding:12px; border-radius:var(--radius-md); background:var(--bg-hover); font-size:13px">
+                <div style="display:flex; justify-content:space-between; align-items:center">
+                  <span style="color:var(--text-strong); font-weight:500">Index Status</span>
+                  <button class="btn btn--sm" @click=${() => {
+                    void indexVislzrProject(
+                      state as unknown as import("./controllers/vislzr.ts").VislzrState,
+                    );
+                  }} ?disabled=${state.vislzrKbIndexing}>
+                    ${state.vislzrKbIndexing ? "Indexing..." : "Re-index"}
+                  </button>
+                </div>
+                <div style="margin-top:8px; color:var(--muted)">
+                  ${state.vislzrKbIndexStatus.total_documents ?? 0} documents indexed
+                </div>
+              </div>
+            `
+                : nothing
+            }
+            ${renderCcKb({
+              loading: state.ccKbLoading,
+              results: state.ccKbResults,
+              query: state.ccKbQuery,
+              error: state.ccKbError,
+              onQueryChange: (q) => (state.ccKbQuery = q),
+              onSearch: () => loadCcKb(state),
+            })}
           </div>
-        </section>
+        `
+            : nothing
+        }
+        <div class="forge-layout">
+          <div class="forge-canvas">
+            ${renderAgentMindmap(state, resolvedAgentId)}
+          </div>
+          ${
+            state.chatMessages?.length
+              ? html`
+            <div class="forge-stream">
+              ${(state.chatMessages as Array<{ role?: string; text?: string; content?: string }>).slice(-5).map((m) => html`<div class="forge-stream__msg"><strong>${m.role ?? "assistant"}:</strong> ${m.text ?? m.content ?? ""}</div>`)}
+            </div>
+          `
+              : nothing
+          }
+          <div class="forge-input">
+            <select class="forge-input__agent" @change=${(e: Event) => {
+              const id = (e.target as HTMLSelectElement).value;
+              state.agentsSelectedId = id;
+            }}>
+              ${
+                (state.agentsList?.agents ?? []).length === 0
+                  ? html`
+                      <option value="">No agents</option>
+                    `
+                  : (state.agentsList?.agents ?? []).map(
+                      (a: { id: string; identity?: { name?: string } }) =>
+                        html`<option value=${a.id} ?selected=${a.id === resolvedAgentId}>${a.identity?.name ?? a.id}</option>`,
+                    )
+              }
+            </select>
+            <textarea
+              class="forge-input__field"
+              rows="1"
+              placeholder="Ask anything..."
+              .value=${state.chatMessage ?? ""}
+              @input=${(e: Event) => {
+                state.chatMessage = (e.target as HTMLTextAreaElement).value;
+              }}
+              @keydown=${(e: KeyboardEvent) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  void state.handleSendChat();
+                }
+              }}
+            ></textarea>
+            <button class="topbar-icon forge-mic-btn ${(state as unknown as Record<string, boolean>).forgeMicActive ? "forge-mic-btn--active" : ""}" title="${(state as unknown as Record<string, boolean>).forgeMicActive ? "Stop voice" : "Start voice"}" @click=${() => {
+              const isActive = (state as unknown as Record<string, boolean>).forgeMicActive;
+              (state as unknown as Record<string, boolean>).forgeMicActive = !isActive;
+              const voiceEl = document.querySelector("voice-toggle") as
+                | (HTMLElement & { toggle?: () => void })
+                | null;
+              if (voiceEl?.toggle) voiceEl.toggle();
+            }}>
+              ${icons.mic}
+            </button>
+            <button class="topbar-icon" title="Send" @click=${() => void state.handleSendChat()} style="color: var(--accent)">
+              ${icons.send}
+            </button>
+          </div>
+        </div>
 
         ${
           state.tab === "home"
@@ -433,111 +589,6 @@ export function renderApp(state: AppViewState) {
                 theme: state.theme,
                 onPasswordChange: (v) => state.setPassword(v),
                 onThemeChange: (t) => state.setTheme(t as import("./theme.ts").ThemeMode),
-              })
-            : nothing
-        }
-
-        ${
-          state.tab === "vislzr"
-            ? renderVislzr({
-                loading: state.vislzrLoading,
-                error: state.vislzrError,
-                canvases: state.vislzrCanvases,
-                selectedCanvasId: state.vislzrSelectedCanvasId,
-                canvasNodes: state.vislzrCanvasNodes,
-                canvasEdges: state.vislzrCanvasEdges,
-                reactMounted: false,
-                // KB integration
-                kbQuery: state.vislzrKbQuery,
-                kbResults: state.vislzrKbResults,
-                kbSearchLoading: state.vislzrKbSearchLoading,
-                kbIndexStatus: state.vislzrKbIndexStatus,
-                kbError: state.vislzrKbError,
-                kbIndexing: state.vislzrKbIndexing,
-                // Project isolation
-                activeProjectId: state.vislzrActiveProjectId,
-                projects: state.vislzrProjects,
-                projectManageOpen: state.vislzrProjectManageOpen,
-                addProjectName: state.vislzrAddProjectName,
-                addProjectPath: state.vislzrAddProjectPath,
-                // Canvas callbacks
-                onRefresh: () =>
-                  loadVislzrCanvases(
-                    state as unknown as import("./controllers/vislzr.ts").VislzrState,
-                  ),
-                onSelectCanvas: (id) =>
-                  loadVislzrCanvas(
-                    state as unknown as import("./controllers/vislzr.ts").VislzrState,
-                    id,
-                  ),
-                onCreateCanvas: (name) =>
-                  createVislzrCanvas(
-                    state as unknown as import("./controllers/vislzr.ts").VislzrState,
-                    name,
-                  ),
-                onDeleteCanvas: () => {},
-                onNodeClick: () => {},
-                onNodeDragEnd: () => {},
-                onAddNode: () => {},
-                onMountReact: () => {},
-                // KB callbacks
-                onKbQueryChange: (q) => (state.vislzrKbQuery = q),
-                onKbSearch: () =>
-                  searchVislzrKb(state as unknown as import("./controllers/vislzr.ts").VislzrState),
-                onKbResultToNode: (result) => {
-                  const canvasId = state.vislzrSelectedCanvasId;
-                  if (canvasId) {
-                    void addKbResultToCanvas(
-                      state as unknown as import("./controllers/vislzr.ts").VislzrState,
-                      canvasId,
-                      result,
-                    );
-                  }
-                },
-                // Project callbacks
-                onProjectChange: (projectId) => {
-                  switchVislzrProject(
-                    state as unknown as import("./controllers/vislzr.ts").VislzrState,
-                    projectId,
-                  );
-                  state.applySettings({
-                    ...state.settings,
-                    vislzrActiveProjectId: projectId,
-                    vislzrProjects: state.vislzrProjects,
-                  });
-                },
-                onToggleManageProjects: () =>
-                  (state.vislzrProjectManageOpen = !state.vislzrProjectManageOpen),
-                onAddProjectNameChange: (v) => (state.vislzrAddProjectName = v),
-                onAddProjectPathChange: (v) => (state.vislzrAddProjectPath = v),
-                onAddProject: () => {
-                  addVislzrProject(
-                    state as unknown as import("./controllers/vislzr.ts").VislzrState,
-                    state.vislzrAddProjectName.trim(),
-                    state.vislzrAddProjectPath.trim(),
-                  );
-                  state.applySettings({
-                    ...state.settings,
-                    vislzrProjects: state.vislzrProjects,
-                  });
-                },
-                onRemoveProject: (projectId) => {
-                  void removeVislzrProject(
-                    state as unknown as import("./controllers/vislzr.ts").VislzrState,
-                    projectId,
-                  ).then(() => {
-                    state.applySettings({
-                      ...state.settings,
-                      vislzrActiveProjectId: state.vislzrActiveProjectId,
-                      vislzrProjects: state.vislzrProjects,
-                    });
-                  });
-                },
-                onIndexProject: (projectId) =>
-                  indexVislzrProject(
-                    state as unknown as import("./controllers/vislzr.ts").VislzrState,
-                    projectId,
-                  ),
               })
             : nothing
         }
@@ -1417,19 +1468,6 @@ export function renderApp(state: AppViewState) {
         }
 
         ${
-          state.tab === "cc-kb"
-            ? renderCcKb({
-                loading: state.ccKbLoading,
-                results: state.ccKbResults,
-                query: state.ccKbQuery,
-                error: state.ccKbError,
-                onQueryChange: (q) => (state.ccKbQuery = q),
-                onSearch: () => loadCcKb(state),
-              })
-            : nothing
-        }
-
-        ${
           state.tab === "cc-arena"
             ? html`
               ${renderNotesContext({ results: state.notesSearchResults, loading: state.notesSearchLoading })}
@@ -1450,19 +1488,6 @@ export function renderApp(state: AppViewState) {
                 onSendChat: () => sendCcArenaChat(state),
               })}
             `
-            : nothing
-        }
-        ${
-          state.tab === "settings"
-            ? renderSettingsContainer({
-                activeSubTab:
-                  ((state as unknown as Record<string, string>)
-                    .settingsSubTab as import("./navigation.ts").SettingsSubTab) ?? "config",
-                onSubTabChange: (tab) => {
-                  (state as unknown as Record<string, string>).settingsSubTab = tab;
-                },
-                content: nothing,
-              })
             : nothing
         }
       </main>

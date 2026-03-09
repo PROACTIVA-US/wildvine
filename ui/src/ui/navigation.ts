@@ -4,6 +4,7 @@ import type { IconName } from "./icons.js";
 // Flat nav items (no groups) with bottom-pinned Profile & Settings.
 
 export type Tab =
+  | "forge"
   | "home"
   | "chat"
   | "agents"
@@ -40,22 +41,9 @@ export interface NavItem {
   icon: IconName;
 }
 
-export const MAIN_NAV_ITEMS: NavItem[] = [
-  { tab: "home", label: "Home", icon: "barChart" },
-  { tab: "chat", label: "Chat", icon: "messageSquare" },
-  { tab: "agents", label: "Agents", icon: "users" },
-  { tab: "vislzr", label: "VISLZR", icon: "zap" },
-  { tab: "vine-view", label: "Vine View", icon: "gitBranch" },
-  { tab: "arena", label: "Arena", icon: "swords" },
-  { tab: "strategy", label: "Strategy", icon: "target" },
-  { tab: "governance", label: "Governance", icon: "shield" },
-  { tab: "living-note", label: "Living Note", icon: "edit" },
-];
+export const MAIN_NAV_ITEMS: NavItem[] = [];
 
-export const BOTTOM_NAV_ITEMS: NavItem[] = [
-  { tab: "profile", label: "Profile", icon: "user" },
-  { tab: "settings", label: "Settings", icon: "settings" },
-];
+export const BOTTOM_NAV_ITEMS: NavItem[] = [];
 
 // Settings sub-tabs (legacy admin views moved here)
 export type SettingsSubTab =
@@ -105,6 +93,7 @@ export const TAB_GROUPS = [
 // ── Path mapping ──────────────────────────────────────────
 
 const TAB_PATHS: Record<Tab, string> = {
+  forge: "/forge",
   home: "/home",
   chat: "/chat",
   agents: "/agents",
@@ -139,7 +128,8 @@ const PATH_TO_TAB = new Map(Object.entries(TAB_PATHS).map(([tab, path]) => [path
 
 // Legacy tab → new tab redirects
 const TAB_REDIRECTS: Partial<Record<Tab, Tab>> = {
-  overview: "home",
+  home: "forge",
+  overview: "forge",
   "cc-governor": "governance",
   "cc-arena": "arena",
   "cc-kb": "living-note",
@@ -232,7 +222,7 @@ export function tabFromPath(pathname: string, basePath = ""): Tab | null {
     normalized = "/";
   }
   if (normalized === "/") {
-    return "home";
+    return "forge";
   }
   return PATH_TO_TAB.get(normalized) ?? null;
 }
@@ -266,6 +256,8 @@ export function iconForTab(tab: Tab): IconName {
   }
   // Legacy tab icons
   switch (tab) {
+    case "forge":
+      return "zap";
     case "overview":
       return "barChart";
     case "channels":
@@ -309,6 +301,8 @@ export function titleForTab(tab: Tab) {
     return item.label;
   }
   switch (tab) {
+    case "forge":
+      return "The Forge";
     case "overview":
       return "Overview";
     case "channels":
@@ -348,6 +342,8 @@ export function titleForTab(tab: Tab) {
 
 export function subtitleForTab(tab: Tab) {
   switch (tab) {
+    case "forge":
+      return "Canvas, conversation, and direct agent interaction.";
     case "home":
       return "Dashboard overview and quick actions.";
     case "chat":
