@@ -1,0 +1,12 @@
+{
+  "name": "@wildvine/kimi-provider",
+  "version": "2026.4.1-beta.1",
+  "private": true,
+  "description": "Wildvine Kimi provider plugin",
+  "type": "module",
+  "wildvine": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}

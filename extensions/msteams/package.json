@@ -1,0 +1,48 @@
+{
+  "name": "@wildvine/msteams",
+  "version": "2026.4.1-beta.1",
+  "description": "Wildvine Microsoft Teams channel plugin",
+  "type": "module",
+  "dependencies": {
+    "@microsoft/teams.api": "2.0.6",
+    "@microsoft/teams.apps": "2.0.6",
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "wildvine": "workspace:*"
+  },
+  "peerDependencies": {
+    "wildvine": ">=2026.4.1-beta.1"
+  },
+  "peerDependenciesMeta": {
+    "wildvine": {
+      "optional": true
+    }
+  },
+  "wildvine": {
+    "extensions": [
+      "./index.ts"
+    ],
+    "setupEntry": "./setup-entry.ts",
+    "channel": {
+      "id": "msteams",
+      "label": "Microsoft Teams",
+      "selectionLabel": "Microsoft Teams (Teams SDK)",
+      "docsPath": "/channels/msteams",
+      "docsLabel": "msteams",
+      "blurb": "Teams SDK; enterprise support.",
+      "aliases": [
+        "teams"
+      ],
+      "order": 60
+    },
+    "install": {
+      "npmSpec": "@wildvine/msteams",
+      "defaultChoice": "npm",
+      "minHostVersion": ">=2026.4.1"
+    },
+    "release": {
+      "publishToNpm": true
+    }
+  }
+}

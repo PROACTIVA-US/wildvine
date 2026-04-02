@@ -1,0 +1,339 @@
+name: Wildvine
+options:
+  bundleIdPrefix: ai.wildvine
+  deploymentTarget:
+    iOS: "18.0"
+  xcodeVersion: "16.0"
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    ENABLE_APP_INTENTS_METADATA_GENERATION: NO
+
+packages:
+  WildvineKit:
+    path: ../shared/WildvineKit
+  Swabble:
+    path: ../../Swabble
+
+schemes:
+  Wildvine:
+    shared: true
+    build:
+      targets:
+        Wildvine: all
+    test:
+      targets:
+        - WildvineTests
+        - WildvineLogicTests
+  WildvineLogicTests:
+    shared: true
+    build:
+      targets:
+        WildvineLogicTests: all
+    test:
+      targets:
+        - WildvineLogicTests
+
+targets:
+  Wildvine:
+    type: application
+    platform: iOS
+    configFiles:
+      Debug: Signing.xcconfig
+      Release: Signing.xcconfig
+    sources:
+      - path: Sources
+    dependencies:
+      - target: WildvineShareExtension
+        embed: true
+      - target: WildvineActivityWidget
+        embed: true
+      - target: WildvineWatchApp
+      - package: WildvineKit
+      - package: WildvineKit
+        product: WildvineChatUI
+      - package: WildvineKit
+        product: WildvineProtocol
+      - package: Swabble
+        product: SwabbleKit
+      - sdk: AppIntents.framework
+    preBuildScripts:
+      - name: SwiftFormat (lint)
+        basedOnDependencyAnalysis: false
+        inputFileLists:
+          - $(SRCROOT)/SwiftSources.input.xcfilelist
+        script: |
+          set -euo pipefail
+          export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
+          if ! command -v swiftformat >/dev/null 2>&1; then
+            echo "error: swiftformat not found (brew install swiftformat)" >&2
+            exit 1
+          fi
+          swiftformat --lint --config "$SRCROOT/../../.swiftformat" \
+            --filelist "$SRCROOT/SwiftSources.input.xcfilelist"
+      - name: SwiftLint
+        basedOnDependencyAnalysis: false
+        inputFileLists:
+          - $(SRCROOT)/SwiftSources.input.xcfilelist
+        script: |
+          set -euo pipefail
+          export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
+          if ! command -v swiftlint >/dev/null 2>&1; then
+            echo "error: swiftlint not found (brew install swiftlint)" >&2
+            exit 1
+          fi
+          swiftlint lint --config "$SRCROOT/.swiftlint.yml" --use-script-input-file-lists
+    settings:
+      base:
+        CODE_SIGN_IDENTITY: "Apple Development"
+        CODE_SIGN_ENTITLEMENTS: Sources/Wildvine.entitlements
+        CODE_SIGN_STYLE: "$(WILDVINE_CODE_SIGN_STYLE)"
+        DEVELOPMENT_TEAM: "$(WILDVINE_DEVELOPMENT_TEAM)"
+        PRODUCT_BUNDLE_IDENTIFIER: "$(WILDVINE_APP_BUNDLE_ID)"
+        PROVISIONING_PROFILE_SPECIFIER: "$(WILDVINE_APP_PROFILE)"
+        TARGETED_DEVICE_FAMILY: "1"
+        SWIFT_VERSION: "6.0"
+        SWIFT_STRICT_CONCURRENCY: complete
+        SUPPORTS_LIVE_ACTIVITIES: YES
+        ENABLE_APPINTENTS_METADATA: NO
+        ENABLE_APP_INTENTS_METADATA_GENERATION: NO
+      configs:
+        Debug:
+          WILDVINE_PUSH_TRANSPORT: direct
+          WILDVINE_PUSH_DISTRIBUTION: local
+          WILDVINE_PUSH_RELAY_BASE_URL: ""
+          WILDVINE_PUSH_APNS_ENVIRONMENT: sandbox
+        Release:
+          WILDVINE_PUSH_TRANSPORT: direct
+          WILDVINE_PUSH_DISTRIBUTION: local
+          WILDVINE_PUSH_RELAY_BASE_URL: ""
+          WILDVINE_PUSH_APNS_ENVIRONMENT: production
+    info:
+      path: Sources/Info.plist
+      properties:
+        CFBundleDisplayName: Wildvine
+        CFBundleIconName: AppIcon
+        CFBundleURLTypes:
+          - CFBundleURLName: ai.wildvine.ios
+            CFBundleURLSchemes:
+              - wildvine
+        CFBundleShortVersionString: "$(WILDVINE_MARKETING_VERSION)"
+        CFBundleVersion: "$(WILDVINE_BUILD_VERSION)"
+        UILaunchScreen: {}
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        UIBackgroundModes:
+          - audio
+          - remote-notification
+        BGTaskSchedulerPermittedIdentifiers:
+          - ai.wildvine.ios.bgrefresh
+        NSLocalNetworkUsageDescription: Wildvine discovers and connects to your Wildvine gateway on the local network.
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoadsInWebContent: true
+        NSBonjourServices:
+          - _wildvine-gw._tcp
+        NSCameraUsageDescription: Wildvine can capture photos or short video clips when requested via the gateway.
+        NSLocationWhenInUseUsageDescription: Wildvine uses your location when you allow location sharing.
+        NSLocationAlwaysAndWhenInUseUsageDescription: Wildvine can share your location in the background when you enable Always.
+        NSMicrophoneUsageDescription: Wildvine needs microphone access for voice wake.
+        NSMotionUsageDescription: Wildvine may use motion data to support device-aware interactions and automations.
+        NSPhotoLibraryUsageDescription: Wildvine needs photo library access when you choose existing photos to share with your assistant.
+        NSSpeechRecognitionUsageDescription: Wildvine uses on-device speech recognition for voice wake.
+        NSSupportsLiveActivities: true
+        ITSAppUsesNonExemptEncryption: false
+        WildvinePushTransport: "$(WILDVINE_PUSH_TRANSPORT)"
+        WildvinePushDistribution: "$(WILDVINE_PUSH_DISTRIBUTION)"
+        WildvinePushRelayBaseURL: "$(WILDVINE_PUSH_RELAY_BASE_URL)"
+        WildvinePushAPNsEnvironment: "$(WILDVINE_PUSH_APNS_ENVIRONMENT)"
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+
+  WildvineShareExtension:
+    type: app-extension
+    platform: iOS
+    configFiles:
+      Debug: Signing.xcconfig
+      Release: Signing.xcconfig
+    sources:
+      - path: ShareExtension
+    dependencies:
+      - package: WildvineKit
+      - sdk: AppIntents.framework
+    settings:
+      base:
+        CODE_SIGN_IDENTITY: "Apple Development"
+        CODE_SIGN_STYLE: "$(WILDVINE_CODE_SIGN_STYLE)"
+        DEVELOPMENT_TEAM: "$(WILDVINE_DEVELOPMENT_TEAM)"
+        ENABLE_APPINTENTS_METADATA: NO
+        ENABLE_APP_INTENTS_METADATA_GENERATION: NO
+        PRODUCT_BUNDLE_IDENTIFIER: "$(WILDVINE_SHARE_BUNDLE_ID)"
+        PROVISIONING_PROFILE_SPECIFIER: "$(WILDVINE_SHARE_PROFILE)"
+        SWIFT_VERSION: "6.0"
+        SWIFT_STRICT_CONCURRENCY: complete
+    info:
+      path: ShareExtension/Info.plist
+      properties:
+        CFBundleDisplayName: Wildvine Share
+        CFBundleShortVersionString: "$(WILDVINE_MARKETING_VERSION)"
+        CFBundleVersion: "$(WILDVINE_BUILD_VERSION)"
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.share-services
+          NSExtensionPrincipalClass: "$(PRODUCT_MODULE_NAME).ShareViewController"
+          NSExtensionAttributes:
+            NSExtensionActivationRule:
+              NSExtensionActivationSupportsText: true
+              NSExtensionActivationSupportsWebURLWithMaxCount: 1
+              NSExtensionActivationSupportsImageWithMaxCount: 10
+              NSExtensionActivationSupportsMovieWithMaxCount: 1
+
+  WildvineActivityWidget:
+    type: app-extension
+    platform: iOS
+    configFiles:
+      Debug: Signing.xcconfig
+      Release: Signing.xcconfig
+    sources:
+      - path: ActivityWidget
+      - path: Sources/LiveActivity/WildvineActivityAttributes.swift
+    dependencies:
+      - sdk: WidgetKit.framework
+      - sdk: ActivityKit.framework
+    settings:
+      base:
+        CODE_SIGN_IDENTITY: "Apple Development"
+        CODE_SIGN_STYLE: "$(WILDVINE_CODE_SIGN_STYLE)"
+        DEVELOPMENT_TEAM: "$(WILDVINE_DEVELOPMENT_TEAM)"
+        PRODUCT_BUNDLE_IDENTIFIER: "$(WILDVINE_ACTIVITY_WIDGET_BUNDLE_ID)"
+        SWIFT_VERSION: "6.0"
+        SWIFT_STRICT_CONCURRENCY: complete
+        SUPPORTS_LIVE_ACTIVITIES: YES
+    info:
+      path: ActivityWidget/Info.plist
+      properties:
+        CFBundleDisplayName: Wildvine Activity
+        CFBundleShortVersionString: "$(WILDVINE_MARKETING_VERSION)"
+        CFBundleVersion: "$(WILDVINE_BUILD_VERSION)"
+        NSSupportsLiveActivities: true
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+
+  WildvineWatchApp:
+    type: application.watchapp2
+    platform: watchOS
+    deploymentTarget: "11.0"
+    sources:
+      - path: WatchApp
+    dependencies:
+      - target: WildvineWatchExtension
+    configFiles:
+      Debug: Config/Signing.xcconfig
+      Release: Config/Signing.xcconfig
+    settings:
+      base:
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ENABLE_APPINTENTS_METADATA: NO
+        ENABLE_APP_INTENTS_METADATA_GENERATION: NO
+        PRODUCT_BUNDLE_IDENTIFIER: "$(WILDVINE_WATCH_APP_BUNDLE_ID)"
+    info:
+      path: WatchApp/Info.plist
+      properties:
+        CFBundleDisplayName: Wildvine
+        CFBundleShortVersionString: "$(WILDVINE_MARKETING_VERSION)"
+        CFBundleVersion: "$(WILDVINE_BUILD_VERSION)"
+        WKCompanionAppBundleIdentifier: "$(WILDVINE_APP_BUNDLE_ID)"
+        WKWatchKitApp: true
+
+  WildvineWatchExtension:
+    type: watchkit2-extension
+    platform: watchOS
+    deploymentTarget: "11.0"
+    sources:
+      - path: WatchExtension/Sources
+    dependencies:
+      - sdk: AppIntents.framework
+      - sdk: WatchConnectivity.framework
+      - sdk: UserNotifications.framework
+    configFiles:
+      Debug: Config/Signing.xcconfig
+      Release: Config/Signing.xcconfig
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: "$(WILDVINE_WATCH_EXTENSION_BUNDLE_ID)"
+    info:
+      path: WatchExtension/Info.plist
+      properties:
+        CFBundleDisplayName: Wildvine
+        CFBundleShortVersionString: "$(WILDVINE_MARKETING_VERSION)"
+        CFBundleVersion: "$(WILDVINE_BUILD_VERSION)"
+        NSExtension:
+          NSExtensionAttributes:
+            WKAppBundleIdentifier: "$(WILDVINE_WATCH_APP_BUNDLE_ID)"
+          NSExtensionPointIdentifier: com.apple.watchkit
+
+  WildvineTests:
+    type: bundle.unit-test
+    platform: iOS
+    configFiles:
+      Debug: Signing.xcconfig
+      Release: Signing.xcconfig
+    sources:
+      - path: Tests
+        excludes:
+          - Logic
+    dependencies:
+      - target: Wildvine
+      - package: Swabble
+        product: SwabbleKit
+      - sdk: AppIntents.framework
+    settings:
+      base:
+        CODE_SIGN_IDENTITY: "Apple Development"
+        CODE_SIGN_STYLE: "$(WILDVINE_CODE_SIGN_STYLE)"
+        DEVELOPMENT_TEAM: "$(WILDVINE_DEVELOPMENT_TEAM)"
+        PRODUCT_BUNDLE_IDENTIFIER: ai.wildvine.ios.tests
+        ENABLE_APP_INTENTS_METADATA_GENERATION: NO
+        SWIFT_VERSION: "6.0"
+        SWIFT_STRICT_CONCURRENCY: complete
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Wildvine.app/Wildvine"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+    info:
+      path: Tests/Info.plist
+      properties:
+        CFBundleDisplayName: WildvineTests
+        CFBundleShortVersionString: "$(WILDVINE_MARKETING_VERSION)"
+        CFBundleVersion: "$(WILDVINE_BUILD_VERSION)"
+
+  WildvineLogicTests:
+    type: bundle.unit-test
+    platform: iOS
+    configFiles:
+      Debug: Signing.xcconfig
+      Release: Signing.xcconfig
+    sources:
+      - path: Tests/Logic
+    dependencies:
+      - package: WildvineKit
+    settings:
+      base:
+        CODE_SIGN_IDENTITY: "Apple Development"
+        CODE_SIGN_STYLE: "$(WILDVINE_CODE_SIGN_STYLE)"
+        DEVELOPMENT_TEAM: "$(WILDVINE_DEVELOPMENT_TEAM)"
+        PRODUCT_BUNDLE_IDENTIFIER: ai.wildvine.ios.logic-tests
+        ENABLE_APP_INTENTS_METADATA_GENERATION: NO
+        SWIFT_VERSION: "6.0"
+        SWIFT_STRICT_CONCURRENCY: complete
+    info:
+      path: Tests/Info.plist
+      properties:
+        CFBundleDisplayName: WildvineLogicTests
+        CFBundleShortVersionString: "$(WILDVINE_MARKETING_VERSION)"
+        CFBundleVersion: "$(WILDVINE_BUILD_VERSION)"

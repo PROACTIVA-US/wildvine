@@ -1,0 +1,45 @@
+{
+  "name": "@wildvine/nextcloud-talk",
+  "version": "2026.4.1-beta.1",
+  "description": "Wildvine Nextcloud Talk channel plugin",
+  "type": "module",
+  "devDependencies": {
+    "wildvine": "workspace:*"
+  },
+  "peerDependencies": {
+    "wildvine": ">=2026.4.1-beta.1"
+  },
+  "peerDependenciesMeta": {
+    "wildvine": {
+      "optional": true
+    }
+  },
+  "wildvine": {
+    "extensions": [
+      "./index.ts"
+    ],
+    "setupEntry": "./setup-entry.ts",
+    "channel": {
+      "id": "nextcloud-talk",
+      "label": "Nextcloud Talk",
+      "selectionLabel": "Nextcloud Talk (self-hosted)",
+      "docsPath": "/channels/nextcloud-talk",
+      "docsLabel": "nextcloud-talk",
+      "blurb": "Self-hosted chat via Nextcloud Talk webhook bots.",
+      "aliases": [
+        "nc-talk",
+        "nc"
+      ],
+      "order": 65,
+      "quickstartAllowFrom": true
+    },
+    "install": {
+      "npmSpec": "@wildvine/nextcloud-talk",
+      "defaultChoice": "npm",
+      "minHostVersion": ">=2026.4.1"
+    },
+    "release": {
+      "publishToNpm": true
+    }
+  }
+}

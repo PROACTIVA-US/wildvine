@@ -1,0 +1,14 @@
+{
+  "name": "@wildvine/acpx",
+  "version": "2026.4.1-beta.1",
+  "description": "Wildvine ACP runtime backend via acpx",
+  "type": "module",
+  "dependencies": {
+    "acpx": "0.4.0"
+  },
+  "wildvine": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}

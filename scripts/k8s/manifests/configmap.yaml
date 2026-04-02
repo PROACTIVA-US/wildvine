@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: wildvine-config
+  labels:
+    app: wildvine
+data:
+  wildvine.json: |
+    {
+      "gateway": {
+        "mode": "local",
+        "bind": "loopback",
+        "port": 18789,
+        "auth": {
+          "mode": "token"
+        },
+        "controlUi": {
+          "enabled": true
+        }
+      },
+      "agents": {
+        "defaults": {
+          "workspace": "~/.wildvine/workspace"
+        },
+        "list": [
+          {
+            "id": "default",
+            "name": "Wildvine Assistant",
+            "workspace": "~/.wildvine/workspace"
+          }
+        ]
+      },
+      "cron": { "enabled": false }
+    }
+  AGENTS.md: |
+    # Wildvine Assistant
+
+    You are a helpful AI assistant running in Kubernetes.

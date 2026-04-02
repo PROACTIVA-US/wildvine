@@ -1,0 +1,41 @@
+{
+  "name": "@wildvine/line",
+  "version": "2026.4.1-beta.1",
+  "private": true,
+  "description": "Wildvine LINE channel plugin",
+  "type": "module",
+  "devDependencies": {
+    "wildvine": "workspace:*"
+  },
+  "peerDependencies": {
+    "wildvine": ">=2026.4.1-beta.1"
+  },
+  "peerDependenciesMeta": {
+    "wildvine": {
+      "optional": true
+    }
+  },
+  "wildvine": {
+    "extensions": [
+      "./index.ts"
+    ],
+    "setupEntry": "./setup-entry.ts",
+    "channel": {
+      "id": "line",
+      "label": "LINE",
+      "selectionLabel": "LINE (Messaging API)",
+      "detailLabel": "LINE Bot",
+      "docsPath": "/channels/line",
+      "docsLabel": "line",
+      "blurb": "LINE Messaging API webhook bot.",
+      "systemImage": "message",
+      "order": 75,
+      "quickstartAllowFrom": true
+    },
+    "install": {
+      "npmSpec": "@wildvine/line",
+      "defaultChoice": "npm",
+      "minHostVersion": ">=2026.4.1"
+    }
+  }
+}

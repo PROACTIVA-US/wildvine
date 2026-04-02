@@ -1,0 +1,54 @@
+# Protect the ownership rules themselves.
+/.github/CODEOWNERS @steipete
+
+# WARNING: GitHub CODEOWNERS uses last-match-wins semantics.
+# If you add overlapping rules below the secops block, include @wildvine/secops
+# on those entries too or you can silently remove required secops review.
+# Security-sensitive code, config, and docs require secops review.
+/SECURITY.md @wildvine/secops
+/.github/dependabot.yml @wildvine/secops
+/.github/codeql/ @wildvine/secops
+/.github/workflows/codeql.yml @wildvine/secops
+/src/security/ @wildvine/secops
+/src/secrets/ @wildvine/secops
+/src/config/*secret*.ts @wildvine/secops
+/src/config/**/*secret*.ts @wildvine/secops
+/src/gateway/*auth*.ts @wildvine/secops
+/src/gateway/**/*auth*.ts @wildvine/secops
+/src/gateway/*secret*.ts @wildvine/secops
+/src/gateway/**/*secret*.ts @wildvine/secops
+/src/gateway/security-path*.ts @wildvine/secops
+/src/gateway/resolve-configured-secret-input-string*.ts @wildvine/secops
+/src/gateway/protocol/**/*secret*.ts @wildvine/secops
+/src/gateway/server-methods/secrets*.ts @wildvine/secops
+/src/agents/*auth*.ts @wildvine/secops
+/src/agents/**/*auth*.ts @wildvine/secops
+/src/agents/auth-profiles*.ts @wildvine/secops
+/src/agents/auth-health*.ts @wildvine/secops
+/src/agents/auth-profiles/ @wildvine/secops
+/src/agents/sandbox.ts @wildvine/secops
+/src/agents/sandbox-*.ts @wildvine/secops
+/src/agents/sandbox/ @wildvine/secops
+/src/infra/secret-file*.ts @wildvine/secops
+/src/cron/stagger.ts @wildvine/secops
+/src/cron/service/jobs.ts @wildvine/secops
+/docs/security/ @wildvine/secops
+/docs/gateway/authentication.md @wildvine/secops
+/docs/gateway/sandbox-vs-tool-policy-vs-elevated.md @wildvine/secops
+/docs/gateway/sandboxing.md @wildvine/secops
+/docs/gateway/secrets-plan-contract.md @wildvine/secops
+/docs/gateway/secrets.md @wildvine/secops
+/docs/gateway/security/ @wildvine/secops
+/docs/cli/approvals.md @wildvine/secops
+/docs/cli/sandbox.md @wildvine/secops
+/docs/cli/security.md @wildvine/secops
+/docs/cli/secrets.md @wildvine/secops
+/docs/reference/secretref-credential-surface.md @wildvine/secops
+/docs/reference/secretref-user-supplied-credentials-matrix.json @wildvine/secops
+
+# Release workflow and its supporting release-path checks.
+/.github/workflows/wildvine-npm-release.yml @wildvine/wildvine-release-managers
+/docs/reference/RELEASING.md @wildvine/wildvine-release-managers
+/scripts/wildvine-npm-publish.sh @wildvine/wildvine-release-managers
+/scripts/wildvine-npm-release-check.ts @wildvine/wildvine-release-managers
+/scripts/release-check.ts @wildvine/wildvine-release-managers

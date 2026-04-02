@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: wildvine
+  labels:
+    app: wildvine
+spec:
+  type: ClusterIP
+  selector:
+    app: wildvine
+  ports:
+    - name: gateway
+      port: 18789
+      targetPort: 18789
+      protocol: TCP

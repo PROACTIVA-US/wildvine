@@ -1,0 +1,12 @@
+{
+  "name": "@wildvine/vercel-ai-gateway-provider",
+  "version": "2026.4.1-beta.1",
+  "private": true,
+  "description": "Wildvine Vercel AI Gateway provider plugin",
+  "type": "module",
+  "wildvine": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}

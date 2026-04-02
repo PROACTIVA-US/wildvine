@@ -1,0 +1,15 @@
+// Copy to LocalSigning.xcconfig for personal local signing overrides.
+// This file is only an example and should stay committed.
+
+WILDVINE_CODE_SIGN_STYLE = Automatic
+WILDVINE_DEVELOPMENT_TEAM = YOUR_TEAM_ID
+
+WILDVINE_APP_BUNDLE_ID = ai.wildvine.client
+WILDVINE_SHARE_BUNDLE_ID = ai.wildvine.client.share
+WILDVINE_ACTIVITY_WIDGET_BUNDLE_ID = ai.wildvine.client.activitywidget
+WILDVINE_WATCH_APP_BUNDLE_ID = ai.wildvine.client.watchkitapp
+WILDVINE_WATCH_EXTENSION_BUNDLE_ID = ai.wildvine.client.watchkitapp.extension
+
+// Leave empty with automatic signing.
+WILDVINE_APP_PROFILE =
+WILDVINE_SHARE_PROFILE =

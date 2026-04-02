@@ -1,0 +1,12 @@
+{
+  "name": "@wildvine/moonshot-provider",
+  "version": "2026.4.1-beta.1",
+  "private": true,
+  "description": "Wildvine Moonshot provider plugin",
+  "type": "module",
+  "wildvine": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}
