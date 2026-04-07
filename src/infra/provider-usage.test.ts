@@ -87,15 +87,15 @@ describe("provider usage formatting", () => {
       updatedAt: 0,
       providers: [
         {
-          provider: "openai-codex",
-          displayName: "Codex",
+          provider: "anthropic",
+          displayName: "Claude",
           windows: [],
           error: "Token expired",
         },
       ],
     };
     const lines = formatUsageReportLines(summary);
-    expect(lines.join("\n")).toContain("Codex: Token expired");
+    expect(lines.join("\n")).toContain("Claude: Token expired");
   });
 
   it("includes reset countdowns in report lines", () => {

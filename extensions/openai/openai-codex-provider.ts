@@ -18,7 +18,7 @@ import {
   type ProviderPlugin,
 } from "wildvine/plugin-sdk/provider-model-shared";
 import { createOpenAIAttributionHeadersWrapper } from "wildvine/plugin-sdk/provider-stream";
-import { fetchCodexUsage } from "wildvine/plugin-sdk/provider-usage";
+// Codex usage tracking removed — return empty snapshots instead.
 import { OPENAI_CODEX_DEFAULT_MODEL } from "./default-models.js";
 import { resolveCodexAuthIdentity } from "./openai-codex-auth-identity.js";
 import { buildOpenAICodexProvider } from "./openai-codex-catalog.js";
@@ -293,9 +293,8 @@ export function buildOpenAICodexProviderPlugin(): ProviderPlugin {
       }
       return normalizeCodexTransport(ctx.model);
     },
-    resolveUsageAuth: async (ctx) => await ctx.resolveOAuthToken(),
-    fetchUsageSnapshot: async (ctx) =>
-      await fetchCodexUsage(ctx.token, ctx.accountId, ctx.timeoutMs, ctx.fetchFn),
+    resolveUsageAuth: async () => null,
+    fetchUsageSnapshot: async () => null,
     refreshOAuth: async (cred) => await refreshOpenAICodexOAuthCredential(cred),
     augmentModelCatalog: (ctx) => {
       const gpt54Template = findCatalogTemplate({

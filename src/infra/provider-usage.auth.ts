@@ -186,7 +186,6 @@ async function resolveProviderUsageAuthFallback(params: {
   switch (params.provider) {
     case "anthropic":
     case "github-copilot":
-    case "openai-codex":
       return await resolveOAuthToken(params);
     case "google-gemini-cli": {
       const auth = await resolveOAuthToken(params);
