@@ -4,7 +4,6 @@ import { resolveFetch } from "./fetch.js";
 import { type ProviderAuth, resolveProviderAuths } from "./provider-usage.auth.js";
 import {
   fetchClaudeUsage,
-  fetchCodexUsage,
   fetchGeminiUsage,
   fetchMinimaxUsage,
   fetchZaiUsage,
@@ -87,13 +86,6 @@ async function fetchProviderUsageSnapshotFallback(params: {
         params.timeoutMs,
         params.fetchFn,
         "google-gemini-cli",
-      );
-    case "openai-codex":
-      return await fetchCodexUsage(
-        params.auth.token,
-        params.auth.accountId,
-        params.timeoutMs,
-        params.fetchFn,
       );
     case "zai":
       return await fetchZaiUsage(params.auth.token, params.timeoutMs, params.fetchFn);

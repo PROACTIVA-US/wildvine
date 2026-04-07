@@ -127,8 +127,8 @@ describe("provider-usage.format", () => {
         updatedAt: now,
         providers: [
           {
-            provider: "openai-codex",
-            displayName: "Codex",
+            provider: "anthropic",
+            displayName: "Claude",
             windows: [],
             error: "Token expired",
             plan: "Plus",
@@ -141,7 +141,7 @@ describe("provider-usage.format", () => {
         ],
       } as UsageSummary,
       opts: undefined,
-      expected: ["Usage:", "  Codex (Plus): Token expired", "  Xiaomi: no data"],
+      expected: ["Usage:", "  Claude (Plus): Token expired", "  Xiaomi: no data"],
     },
     {
       name: "formats detailed report lines with reset windows",

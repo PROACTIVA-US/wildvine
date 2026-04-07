@@ -12,7 +12,6 @@ export const PROVIDER_LABELS: Record<UsageProviderId, string> = {
   "github-copilot": "Copilot",
   "google-gemini-cli": "Gemini",
   minimax: "MiniMax",
-  "openai-codex": "Codex",
   xiaomi: "Xiaomi",
   zai: "z.ai",
 };
@@ -22,7 +21,6 @@ export const usageProviders: UsageProviderId[] = [
   "github-copilot",
   "google-gemini-cli",
   "minimax",
-  "openai-codex",
   "xiaomi",
   "zai",
 ];

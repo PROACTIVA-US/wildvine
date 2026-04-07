@@ -58,7 +58,6 @@ describe("provider-usage.load", () => {
       [
         { provider: "github-copilot", token: "copilot-token" },
         { provider: "google-gemini-cli", token: "gemini-token" },
-        { provider: "openai-codex", token: "codex-token", accountId: "acc-1" },
         { provider: "xiaomi", token: "xiaomi-token" },
       ],
       mockFetch,
@@ -67,7 +66,6 @@ describe("provider-usage.load", () => {
     expect(summary.providers.map((provider) => provider.provider)).toEqual([
       "github-copilot",
       "google-gemini-cli",
-      "openai-codex",
       "xiaomi",
     ]);
     expect(
@@ -77,9 +75,6 @@ describe("provider-usage.load", () => {
       summary.providers.find((provider) => provider.provider === "google-gemini-cli")?.windows[0]
         ?.label,
     ).toBe("Pro");
-    expect(
-      summary.providers.find((provider) => provider.provider === "openai-codex")?.windows[0]?.label,
-    ).toBe("3h");
     expect(summary.providers.find((provider) => provider.provider === "xiaomi")?.windows).toEqual(
       [],
     );

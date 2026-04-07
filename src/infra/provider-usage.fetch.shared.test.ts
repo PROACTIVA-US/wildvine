@@ -85,13 +85,13 @@ describe("provider usage fetch shared helpers", () => {
 
   it("maps configured status codes to token expired", () => {
     const snapshot = buildUsageHttpErrorSnapshot({
-      provider: "openai-codex",
+      provider: "anthropic",
       status: 401,
       tokenExpiredStatuses: [401, 403],
     });
 
     expect(snapshot.error).toBe("Token expired");
-    expect(snapshot.provider).toBe("openai-codex");
+    expect(snapshot.provider).toBe("anthropic");
     expect(snapshot.windows).toHaveLength(0);
   });
 
